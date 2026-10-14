@@ -1,0 +1,34 @@
+@page
+@model NextProject.Pages.Admin.SecurityModel
+
+<form class="mat-form" method="post" novalidate>
+    <np-summary />
+    <np-tabs id="security" label="Sicherheit">
+        <np-tab id="signin" title="Anmeldung" icon="shield">
+            <np-card>
+                <div class="mat-form__grid">
+                    <np-input for="Input.SessionDays" label="Sitzung bleibt gültig für Tage" type="number" min="1" max="365" hint="Danach muss man sich wieder anmelden. Die Sitzungen sind in der Datenbank gespeichert und überstehen einen Neustart." />
+                    <np-switch for="Input.RequireTotpForAdmins" label="Administratoren müssen die Zwei-Faktor-Anmeldung einrichten" full="true" />
+                </div>
+            </np-card>
+        </np-tab>
+
+        <np-tab id="links" title="Links" icon="link">
+            <np-card>
+                <div class="mat-form__grid">
+                    <np-input for="Input.ShareLinkDays" label="Freigabe-Link gilt für Tage" type="number" min="1" max="365" hint="Der Vorschlag beim Erstellen eines Links. Jeder Link hat sein eigenes Ablaufdatum." />
+                </div>
+            </np-card>
+        </np-tab>
+
+        <np-tab id="address" title="Adresse" icon="globe">
+            <np-card>
+                <div class="mat-form__grid">
+                    <np-input for="Input.PublicUrl" label="Öffentliche Adresse" type="url" full="true" hint="@(Model.UrlFromEnvironment ? "Wird gerade von der Umgebungsvariable NEXTPROJECT__Server__PublicUrl bestimmt." : $"Steht in den Links, die du weitergibst, zum Beispiel https://projekte.example.de. Leer: die Adresse der Anfrage (jetzt {Model.CurrentBase}).")" />
+                    <np-switch for="Input.ForceSecureCookie" label="Cookie immer als „Secure“ markieren (wenn die Seite über HTTPS erreichbar ist)" full="true" />
+                </div>
+            </np-card>
+        </np-tab>
+    </np-tabs>
+    <np-buttons back-href="/" />
+</form>

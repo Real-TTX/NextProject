@@ -1,0 +1,19 @@
+@page
+@model NextProject.Pages.Admin.OrganizationModel
+
+<form class="mat-form" method="post" novalidate>
+    <np-summary />
+    <np-card title="Unternehmen" icon="briefcase">
+        <div class="mat-form__grid">
+            <np-input for="Input.Name" label="Name des Unternehmens" full="true" hint="Steht oben auf den Seiten, die du per Link freigibst." />
+        </div>
+    </np-card>
+    <np-card title="Wann die Software hinweist" icon="alert">
+        <div class="mat-form__grid">
+            <np-input for="Input.DueSoonDays" label="Demnächst fällig heißt: innerhalb von Tagen" type="number" min="1" max="60" hint="So weit schaut das Dashboard voraus." />
+            <np-input for="Input.OverdueLimit" label="Ein Projekt ist gefährdet ab überfälligen Aufgaben" type="number" min="1" max="50" hint="Eine blockierte Aufgabe oder ein überschrittenes Enddatum wird immer angezeigt." />
+        </div>
+        <p class="mat-hint">Zeitzone dieser Installation: @Model.TimeZone (sie wird beim Start über die Umgebung eingestellt).</p>
+    </np-card>
+    <np-buttons back-href="/" />
+</form>

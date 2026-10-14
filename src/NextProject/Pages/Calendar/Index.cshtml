@@ -1,0 +1,15 @@
+@page
+@model NextProject.Pages.Calendar.IndexModel
+
+<partial name="_LinkTabs" model="Model.Tabs" />
+
+@if (Model.Count == 0)
+{
+    <div class="mat-empty">
+        <span class="mat-empty__icon">@Ui.Icon("calendar")</span>
+        <div class="mat-empty__title">Keine Termine</div>
+        <p>Sobald Todos ein Fälligkeitsdatum haben oder es Meilensteine gibt, erscheinen sie hier.</p>
+    </div>
+}
+
+<section class="mat-schedule np-calendar" id="calendar" data-schedule lang="de" aria-label="Kalender" data-view="month" data-date="@Model.Today" data-week-numbers data-views="month,week,agenda,year" data-events="@Model.EventsJson"></section>

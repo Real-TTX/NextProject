@@ -1,0 +1,40 @@
+@page
+@model NextProject.Pages.Goals.EditModel
+@{
+    var statuses = Controls.Options.Of<GoalStatus>(Labels.Of);
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+
+    <np-card title="Ziel" icon="target">
+        <div class="mat-form__grid">
+            <np-input for="Input.Title" label="Titel" full="true" required="true" hint="Das Ergebnis, das das Unternehmen erreichen will." />
+            <np-textarea for="Input.Description" label="Bedeutung für das Unternehmen" rows="3" full="true" hint="Warum ist das wichtig? Was ist der Mehrwert?" />
+            <np-select for="Input.OwnerUserId" label="Verantwortlich" items="Model.Users" empty="(niemand bestimmt)" />
+            <np-select for="Input.DepartmentId" label="Betrifft Bereich" items="Model.Departments" empty="(das ganze Unternehmen)" />
+            <np-input for="Input.Year" label="Jahr" type="number" min="2000" max="2100" required="true" />
+            <np-select for="Input.Status" label="Status" items="statuses" />
+        </div>
+    </np-card>
+
+    <np-card title="Zielwerte" icon="calendar" sub="in Worten, wie die Geschäftsführung sie vereinbart hat">
+        <div class="mat-form__grid">
+            <np-textarea for="Input.YearTarget" label="Jahresziel" rows="2" full="true" />
+            <np-textarea for="Input.Q1Target" label="Quartalsziel 1" rows="2" />
+            <np-textarea for="Input.Q2Target" label="Quartalsziel 2" rows="2" />
+            <np-textarea for="Input.Q3Target" label="Quartalsziel 3" rows="2" />
+            <np-textarea for="Input.Q4Target" label="Quartalsziel 4" rows="2" />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@($"/Goals/Details?id={Model.Id}")" delete-url="@Url.Page("/Goals/Edit", "Delete", new { id = Model.Id })" delete-confirm="Dieses Ziel löschen? Seine Schlüsselergebnisse werden mit gelöscht. Projekte und Todos bleiben erhalten." />
+    }
+    else
+    {
+        <np-buttons back-href="/Goals" />
+    }
+</form>

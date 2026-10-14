@@ -1,0 +1,55 @@
+@page
+@model NextProject.Pages.Todos.EditModel
+@{
+    var statuses = Controls.Options.Of<TodoStatus>(Labels.Of);
+    var priorities = Controls.Options.Of<Level>(Labels.Of);
+    var back = Model.ReturnUrl ?? (Model.Id is { } id ? $"/Todos/Details?id={id}" : "/Todos");
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+    <np-summary />
+
+    <np-card title="Aufgabe" icon="check-square">
+        <div class="mat-form__grid">
+            <np-input for="Input.Title" label="Titel" full="true" required="true" hint="Was ist zu tun? Am besten mit dem Ergebnis: „Angebot für Kunde X versenden“." />
+            <np-textarea for="Input.Description" label="Beschreibung" rows="4" full="true" />
+            <np-select for="Input.OwnerUserId" label="Verantwortlich" items="Model.Users" required="true" hint="Eine Aufgabe hat genau eine verantwortliche Person." />
+            <np-picker for="Input.ContributorIds" label="Mitwirkende" items="Model.UserChoices" multiple="true" placeholder="Niemand" />
+            <np-select for="Input.Status" label="Status" items="statuses" />
+            <np-radios for="Input.Priority" label="Priorität" items="priorities" />
+            <np-input for="Input.StartDate" label="Startdatum" type="date" clearable="true" />
+            <np-input for="Input.DueDate" label="Fälligkeitsdatum" type="date" clearable="true" />
+            <np-textarea for="Input.BlockReason" label="Was blockiert die Aufgabe?" rows="2" full="true" show-if="Input.Status" show-value="Blocked" required="true" hint="So sieht die Leitung, wo es hakt." />
+            <np-textarea for="Input.BlockNeeds" label="Was wird zum Weitermachen gebraucht?" rows="2" full="true" show-if="Input.Status" show-value="Blocked" hint="Eine Entscheidung, Hilfe, Material ..." />
+            <np-select for="Input.ReviewerUserId" label="Prüfer" items="Model.Users" empty="(niemand bestimmt)" show-if="Input.Status" show-value="InReview" />
+            <np-textarea for="Input.Result" label="Ergebnis" rows="3" full="true" show-if="Input.Status" show-value="InReview,Done" hint="Was ist herausgekommen? Das bleibt bei der Aufgabe stehen, auch wenn sie längst erledigt ist." />
+        </div>
+    </np-card>
+
+    <np-card title="Wozu gehört die Aufgabe?" icon="target" sub="alles hier ist freiwillig">
+        <div class="mat-form__grid">
+            <np-select for="Input.ProjectId" label="Projekt" items="Model.Projects" empty="(keinem Projekt)" />
+            <np-select for="Input.MilestoneId" label="Meilenstein" items="Model.Milestones" empty="(keinem Meilenstein)" show-if="Input.ProjectId" hint="Ein Meilenstein ist erst erreicht, wenn jemand es sagt. Die Aufgaben dazu sind ein Hinweis." />
+            <np-picker for="Input.KeyResultId" label="Schlüsselergebnis" items="Model.KeyResults" placeholder="Keinem Schlüsselergebnis" hint="Das Ziel ergibt sich daraus." />
+            <np-picker for="Input.GoalId" label="Ziel" items="Model.Goals" placeholder="Keinem Ziel" hint="Nur für eine Maßnahme ohne Schlüsselergebnis." />
+        </div>
+    </np-card>
+
+    <np-card title="Schritte und Abhängigkeiten" icon="list-checks">
+        <div class="mat-form__grid">
+            <np-textarea for="Input.Checklist" label="Checkliste" rows="4" full="true" hint="Eine Zeile pro Teilschritt. Abhaken kannst du sie auf der Seite der Aufgabe." />
+            <np-picker for="Input.DependsOnIds" label="Wartet auf" items="Model.TodoChoices" multiple="true" full="true" placeholder="Auf nichts" hint="Erst wenn diese Aufgaben fertig sind, kann diese erledigt werden." />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@back" delete-url="@Url.Page("/Todos/Edit", "Delete", new { id = Model.Id, returnUrl = Model.ReturnUrl })" delete-confirm="Dieses Todo löschen? Es verschwindet aus allen Listen." />
+    }
+    else
+    {
+        <np-buttons back-href="@back" />
+    }
+</form>

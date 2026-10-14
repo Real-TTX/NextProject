@@ -1,0 +1,177 @@
+@page "/s/{token:guid}"
+@model NextProject.Pages.Share.IndexModel
+@{
+    Layout = "_Bare";
+    var now = DateTime.UtcNow;
+}
+
+<div class="np-share">
+    <header class="np-share__brand">
+        @Ui.Logo()
+        <div><strong>NextProject</strong>@if (Model.Organization.Length > 0) { <span class="mat-muted"> · @Model.Organization</span> }</div>
+    </header>
+
+    @if (Model.State == ShareState.Unknown)
+    {
+        <div class="mat-empty"><span class="mat-empty__icon">@Ui.Icon("lock")</span><div class="mat-empty__title">Diesen Link gibt es nicht</div><p>Prüfe, ob die Adresse vollständig ist.</p></div>
+    }
+    else if (Model.State != ShareState.Active)
+    {
+        <div class="mat-empty"><span class="mat-empty__icon">@Ui.Icon("lock")</span><div class="mat-empty__title">@(Model.State == ShareState.Revoked ? "Dieser Link ist widerrufen" : "Dieser Link ist abgelaufen")</div><p>Bitte frage die Person, die ihn dir gegeben hat, nach einem neuen.</p></div>
+    }
+    else if (Model.NeedsPassword)
+    {
+        <div class="mat-auth__card">
+            <h1>Passwort</h1>
+            <p class="mat-muted">Für diese Freigabe brauchst du ein Passwort.</p>
+            <form class="mat-form" method="post" asp-page-handler="Password" asp-route-token="@Model.Token" novalidate>
+                <div class="mat-field @(ViewData.ModelState.ContainsKey("Password") ? "is-invalid" : "")">
+                    <label class="mat-label" for="share-password">Passwort</label>
+                    <input class="mat-input" type="password" id="share-password" name="Password" autocomplete="off" autofocus @(Model.Locked ? "disabled" : "") />
+                    <span class="mat-error" aria-live="polite">@(ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage)</span>
+                </div>
+                <div class="mat-btn-row mat-btn-row--plain"><button type="submit" class="mat-btn mat-btn--primary mat-btn--block" disabled="@Model.Locked">@Ui.Icon("lock-open")<span>Öffnen</span></button></div>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div class="np-head"><div class="np-head__text"><h1>@Model.Link.Title</h1><p class="mat-page__sub">Stand @Fmt.Date(Model.Today) · nur lesen · @Model.RemainingText</p></div></div>
+        @if (!string.IsNullOrWhiteSpace(Model.Link.Message))
+        {
+            <div class="mat-alert mat-alert--info" role="note">@Ui.Icon("info")<div class="mat-alert__body np-prewrap">@Model.Link.Message</div></div>
+        }
+
+        @if (Model.Project is { } p && Model.ProjectFacts is { } f)
+        {
+            <div class="mat-grid mat-grid--4">
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Status</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(p.Status)</span><span class="mat-stat__delta">@Fmt.Period(p.StartDate, p.EndDate)</span></div></div>
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Todos erledigt</span><span class="mat-stat__value">@Fmt.Percent(f.Todos.Completion)</span><span class="mat-stat__delta">@f.Todos.Done von @(f.Todos.Total - f.Todos.Discarded)</span></div></div>
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(f.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(f.KeyResults == 0 ? "nicht gemessen" : Ui.Plural(f.KeyResults, "Schlüsselergebnis", "Schlüsselergebnisse"))</span></div></div>
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projektowner</span><span class="mat-stat__value np-stat-pill">@Ui.Person(p.OwnerUser?.DisplayName)</span><span class="mat-stat__delta">@(p.Department?.Name ?? "")</span></div></div>
+            </div>
+
+            @if (f.Signals.Count > 0 && !p.IsClosed)
+            {
+                <div class="mat-alert @(f.IsEndangered ? "mat-alert--danger" : "mat-alert--warning")" role="status">@Ui.Icon("alert")<div class="mat-alert__body"><strong>Das fällt auf:</strong><ul class="mat-alert__list">@foreach (var s in f.Signals) { <li>@s.Text</li> }</ul></div></div>
+            }
+
+            <np-card title="Worum geht es?" icon="file-text">
+                <dl class="mat-kv">
+                    <dt>Zielsetzung</dt><dd class="np-prewrap">@(p.Objective ?? "–")</dd>
+                    <dt>Erwartetes Ergebnis</dt><dd class="np-prewrap">@(p.ExpectedResult ?? "–")</dd>
+                    <dt>Mehrwert</dt><dd class="np-prewrap">@(p.AddedValue ?? "–")</dd>
+                    @if (!string.IsNullOrWhiteSpace(p.StatusNote)) { <dt>Stand</dt><dd class="np-prewrap">@p.StatusNote</dd> }
+                </dl>
+            </np-card>
+
+            @if (Model.KeyResults.Count > 0)
+            {
+                <np-card title="Schlüsselergebnisse" icon="trending-up">
+                    <ul class="mat-listgroup mat-listgroup--flush">
+                        @foreach (var k in Model.KeyResults)
+                        {
+                            <li><div class="mat-listgroup__item">@Ui.Icon("trending-up")<span class="mat-listgroup__text"><strong>@k.Title</strong><small>@Fmt.Number(k.CurrentValue, 1) von @Fmt.Number(k.TargetValue, 1) @k.Unit</small></span>@Ui.Meter(k.Attainment, "Erreichung")</div></li>
+                        }
+                    </ul>
+                </np-card>
+            }
+
+            @if (p.Milestones.Count > 0)
+            {
+                <np-card title="Meilensteine" icon="flag">
+                    <ul class="mat-listgroup mat-listgroup--flush">
+                        @foreach (var m in p.Milestones.OrderBy(m => m.DueDate))
+                        {
+                            <li><div class="mat-listgroup__item">@Ui.Icon("flag")<span class="mat-listgroup__text"><strong>@m.Title</strong><small>fällig @Fmt.Date(m.DueDate)</small></span>@(m.ReachedDate is { } r ? Ui.Pill("erreicht " + Fmt.Date(r), "ok") : m.DueDate < Model.Today ? Ui.Pill("überfällig", "error") : Ui.Pill("offen", "info"))</div></li>
+                        }
+                    </ul>
+                </np-card>
+            }
+
+            @if (p.Risks.Any(r => r.IsActive))
+            {
+                <np-card title="Offene Risiken" icon="alert">
+                    <ul class="mat-listgroup mat-listgroup--flush">
+                        @foreach (var r in p.Risks.Where(r => r.IsActive).OrderByDescending(r => r.Severity == Level.High))
+                        {
+                            <li><div class="mat-listgroup__item">@Ui.Icon("alert")<span class="mat-listgroup__text"><strong>@r.Title</strong><small>@r.Mitigation</small></span>@Labels.Pill(r.Severity)</div></li>
+                        }
+                    </ul>
+                </np-card>
+            }
+
+            @if (Model.Link.ShowTodos)
+            {
+                <np-card title="Todos" icon="check-square" sub="@(Model.Todos.Count + " Einträge")">
+                    @if (Model.Todos.Count == 0)
+                    {
+                        <p class="mat-muted">Keine Todos.</p>
+                    }
+                    else
+                    {
+                        <div class="mat-table-wrap">
+                            <table class="mat-table" id="share-todos">
+                                <caption class="mat-sr-only">Todos</caption>
+                                <thead><tr><th scope="col">Todo</th><th scope="col">Status</th><th scope="col" class="mat-hide-sm">Verantwortlich</th><th scope="col">Fällig</th></tr></thead>
+                                <tbody>
+                                    @foreach (var t in Model.Todos)
+                                    {
+                                        <tr>
+                                            <td data-label="Todo">@t.Title</td>
+                                            <td data-label="Status">@Labels.Pill(t.Status)</td>
+                                            <td data-label="Verantwortlich" class="mat-hide-sm">@Ui.Person(t.OwnerUser?.DisplayName)</td>
+                                            <td data-label="Fällig">@Ui.DueText(t.DueDate, Model.Today, t.IsOverdue(Model.Today))</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </np-card>
+            }
+        }
+        else if (Model.Goal is { } g && Model.GoalFacts is { } gf)
+        {
+            <div class="mat-grid mat-grid--4">
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Status</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(g.Status)</span><span class="mat-stat__delta">@g.Year@(g.Department is not null ? " · " + g.Department.Name : "")</span></div></div>
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(gf.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(gf.KeyResults == 0 ? "nicht gemessen" : "Durchschnitt der Schlüsselergebnisse")</span></div></div>
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Schlüsselergebnisse</span><span class="mat-stat__value">@gf.KeyResultsReached/@gf.KeyResults</span><span class="mat-stat__delta">erreicht</span></div></div>
+                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projekte</span><span class="mat-stat__value">@gf.Projects</span><span class="mat-stat__delta">zahlen darauf ein</span></div></div>
+            </div>
+
+            <np-card title="Bedeutung und Zielwerte" icon="target">
+                <dl class="mat-kv">
+                    <dt>Bedeutung</dt><dd class="np-prewrap">@(g.Description ?? "–")</dd>
+                    <dt>Jahresziel</dt><dd class="np-prewrap">@(g.YearTarget ?? "–")</dd>
+                    <dt>Quartal 1 bis 4</dt><dd class="np-prewrap">@string.Join(" · ", new[] { g.Q1Target, g.Q2Target, g.Q3Target, g.Q4Target }.Select((t, i) => $"Q{i + 1}: {t ?? "–"}"))</dd>
+                    <dt>Verantwortlich</dt><dd>@Ui.Person(g.OwnerUser?.DisplayName)</dd>
+                </dl>
+            </np-card>
+
+            @if (g.KeyResults.Count > 0)
+            {
+                <np-card title="Schlüsselergebnisse" icon="trending-up">
+                    <ul class="mat-listgroup mat-listgroup--flush">
+                        @foreach (var k in g.KeyResults.OrderBy(k => k.Title))
+                        {
+                            <li><div class="mat-listgroup__item">@Ui.Icon("trending-up")<span class="mat-listgroup__text"><strong>@k.Title</strong><small>@Fmt.Number(k.CurrentValue, 1) von @Fmt.Number(k.TargetValue, 1) @k.Unit</small></span>@Ui.Meter(k.Attainment, "Erreichung")</div></li>
+                        }
+                    </ul>
+                </np-card>
+            }
+
+            @if (Model.GoalProjects.Count > 0)
+            {
+                <np-card title="Projekte" icon="folder">
+                    <ul class="mat-listgroup mat-listgroup--flush">
+                        @foreach (var (project, facts) in Model.GoalProjects.OrderBy(x => x.Project.Name))
+                        {
+                            <li><div class="mat-listgroup__item">@Ui.Icon("folder")<span class="mat-listgroup__text"><strong>@project.Name</strong><small>@project.OwnerUser?.DisplayName · @Fmt.Period(project.StartDate, project.EndDate)</small></span>@Labels.Pill(project.Status)@Ui.Meter(facts.Todos.Total - facts.Todos.Discarded > 0 ? facts.Todos.Completion : null, "Erledigte Todos")</div></li>
+                        }
+                    </ul>
+                </np-card>
+            }
+        }
+    }
+</div>

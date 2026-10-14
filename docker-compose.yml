@@ -1,0 +1,22 @@
+services:
+  nextproject:
+    image: ghcr.io/real-ttx/nextproject:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "2860:2860"   # web interface (HTTP: put a reverse proxy with TLS in front)
+    volumes:
+      - nextproject-data:/data
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: nextproject
+    volumes:
+      - nextproject-db:/var/lib/postgresql/data
+
+volumes:
+  nextproject-data:
+  nextproject-db:

@@ -1,0 +1,31 @@
+@page
+@model NextProject.Pages.Projects.RiskModel
+@{
+    var severities = Controls.Options.Of<Level>(Labels.Of);
+    var statuses = Controls.Options.Of<RiskStatus>(Labels.Of);
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+    <np-card title="Risiko" icon="alert" sub="@Model.ProjectName">
+        <div class="mat-form__grid">
+            <np-input for="Input.Title" label="Risiko" full="true" required="true" hint="Was könnte schiefgehen?" />
+            <np-textarea for="Input.Description" label="Beschreibung" rows="2" full="true" />
+            <np-radios for="Input.Severity" label="Schwere" items="severities" />
+            <np-select for="Input.Status" label="Status" items="statuses" />
+            <np-select for="Input.OwnerUserId" label="Verantwortlich" items="Model.Users" empty="(niemand bestimmt)" />
+            <np-textarea for="Input.Mitigation" label="Gegenmaßnahme" rows="2" full="true" hint="Was tun wir, damit es nicht eintritt, oder wenn es eintritt?" />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@($"/Projects/Details?id={Model.ProjectId}&tab=risks")" delete-url="@Url.Page("/Projects/Risk", "Delete", new { projectId = Model.ProjectId, id = Model.Id })" delete-confirm="Dieses Risiko löschen?" />
+    }
+    else
+    {
+        <np-buttons back-href="@($"/Projects/Details?id={Model.ProjectId}&tab=risks")" />
+    }
+</form>

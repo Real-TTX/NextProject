@@ -1,0 +1,49 @@
+@model BoardView
+@*
+    The board: a column per status, a card per todo. Cards are dragged between the columns (app.js posts the change); every card also has a select, which is the way for
+    a phone and for the keyboard. Several boards can share a page: Model.Id makes the ids unique.
+*@
+<div class="np-board" data-np-board id="@Model.Id">
+    @foreach (var column in Model.Columns())
+    {
+        <section class="np-board__col np-board__col--@column.Status.ToString().ToLowerInvariant()" data-np-col="@column.Status" aria-labelledby="@Model.Id-h-@column.Status">
+            <header class="np-board__head">
+                @Ui.Icon(Labels.Icon(column.Status))
+                <h3 id="@Model.Id-h-@column.Status">@Labels.Of(column.Status)</h3>
+                <span class="mat-badge mat-badge--soft" data-np-count>@column.Total</span>
+            </header>
+            <div class="np-board__cards" data-np-drop>
+                @foreach (var t in column.Cards)
+                {
+                    var overdue = t.IsOverdue(Model.Today);
+                    <article class="np-card" draggable="true" data-np-card="@t.Id" data-np-status="@t.Status">
+                        <a class="np-card__title" href="/Todos/Details?id=@t.Id">@t.Title</a>
+                        @if (Model.ShowProject && t.Project is not null)
+                        {
+                            <small class="mat-muted np-card__sub">@t.Project.Name</small>
+                        }
+                        <div class="np-card__meta">
+                            @Labels.Pill(t.Priority)
+                            @if (t.DueDate is not null) { <span class="np-card__due @(overdue ? "np-overdue" : "mat-muted")">@(overdue ? Ui.Icon("alert") : Ui.Icon("calendar")) @Fmt.Due(t.DueDate, Model.Today)</span> }
+                            <span class="np-card__owner">@Ui.Avatar(t.OwnerUser?.DisplayName, "sm")</span>
+                        </div>
+                        <form method="post" action="/Todos/Board?handler=Move&id=@t.Id" class="np-card__move" asp-antiforgery="true">
+                            <label class="mat-sr-only" for="@Model.Id-st-@t.Id">Status von „@t.Title“</label>
+                            <select class="mat-select mat-select--sm" id="@Model.Id-st-@t.Id" name="to" data-submit-on-change>
+                                @foreach (var s in BoardView.Statuses)
+                                {
+                                    <option value="@s" selected="@(s == t.Status)">@Labels.Of(s)</option>
+                                }
+                            </select>
+                            <noscript><button type="submit" class="mat-btn mat-btn--sm">OK</button></noscript>
+                        </form>
+                    </article>
+                }
+                @if (column.Total > column.Cards.Count)
+                {
+                    <p class="mat-muted np-board__more">Und @(column.Total - column.Cards.Count) weitere. Die Liste zeigt alle.</p>
+                }
+            </div>
+        </section>
+    }
+</div>

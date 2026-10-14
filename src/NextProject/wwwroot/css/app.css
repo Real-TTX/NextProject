@@ -1,0 +1,171 @@
+/* ==========================================================================
+   NextProject: the few styles of the app itself. Everything else is MatUi (wwwroot/ui), which is copied from MatDesign and never changed here.
+   Rules of this file: classes start with np-; only tokens (--mat-*) for colours, no literal colour except the accent of the app below;
+   flat on purpose: borders instead of shadows, no gradients; no inline styles anywhere (the script sets positions with custom properties).
+   ========================================================================== */
+
+/* The colour of the app: cherry red. MatUi derives hover, tints, links, the focus ring and the dark mode from this one value (white on it: 5.9 : 1). */
+[data-app="nextproject"] { --mat-app-accent: #c8102e; }
+
+/* ---- Sign-in and other pages without a menu ---- */
+.np-auth__alt { text-align: center; margin: var(--mat-space-4) 0 0; font-size: var(--mat-fs-sm); }
+.np-bare { padding-block: var(--mat-space-8); }
+
+/* ---- Small helpers ---- */
+.np-sub { display: block; }
+.np-name, .mat-table__name.np-name { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.np-prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.np-done { text-decoration: line-through; color: var(--mat-text-muted); }
+.np-stat-pill { font-size: var(--mat-fs-md); }
+.np-overdue { color: var(--mat-danger-text); font-weight: 600; display: inline-flex; align-items: center; gap: var(--mat-space-1); }
+.np-person { display: inline-flex; align-items: center; gap: var(--mat-space-2); }
+.mat-page > * + * { margin-top: var(--mat-space-4); }
+.np-codes { list-style: none; padding: 0; margin: var(--mat-space-4) 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: var(--mat-space-2); }
+.np-codes li { background: var(--mat-surface-3); padding: var(--mat-space-2) var(--mat-space-3); border-radius: var(--mat-radius); text-align: center; letter-spacing: .05em; }
+.np-steps { padding-left: var(--mat-space-5); margin: 0 0 var(--mat-space-4); display: grid; gap: var(--mat-space-1); }
+.np-qr { display: flex; justify-content: center; margin: var(--mat-space-4) 0; }
+.np-qr svg { width: 200px; height: 200px; background: #fff; padding: var(--mat-space-2); border-radius: var(--mat-radius); }
+
+/* ---- The head of a page that draws its own (todo, project, goal): back button, title, one line ---- */
+.np-head { display: flex; align-items: flex-start; gap: var(--mat-space-3); }
+.np-head__text { min-width: 0; }
+.np-head__text h1 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-2) var(--mat-space-3); margin: 0; overflow-wrap: anywhere; }
+.np-head__text .mat-page__sub { margin: var(--mat-space-1) 0 0; }
+
+/* ---- A progress bar with its value written next to it ---- */
+.np-meter { display: flex; align-items: center; gap: var(--mat-space-2); min-width: 7rem; }
+.np-meter .mat-meter { flex: 1; }
+.np-meter__text { font-size: var(--mat-fs-sm); font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: right; }
+.np-progress { display: grid; gap: var(--mat-space-3); margin-bottom: var(--mat-space-3); }
+.np-progress > div { display: grid; gap: var(--mat-space-1); }
+
+/* ---- Cards that are links (the numbers of the dashboard) ---- */
+.np-statlink { text-decoration: none; color: inherit; }
+.np-statlink:hover { border-color: var(--mat-text-faint); background: var(--mat-surface-2); text-decoration: none; }
+
+/* ---- Tabs that are links ---- */
+.np-linktabs { margin-bottom: var(--mat-space-3); }
+
+/* ---- Forms ---- */
+.np-addform { margin-top: var(--mat-space-4); }
+.np-fold { border: 1px solid var(--mat-border); border-radius: var(--mat-radius); padding: var(--mat-space-3) var(--mat-space-4); background: var(--mat-surface); }
+.np-fold > summary { cursor: pointer; display: flex; align-items: center; gap: var(--mat-space-2); font-weight: 600; color: var(--mat-text-muted); }
+.np-fold > summary:hover { color: var(--mat-accent-text); }
+.np-fold[open] > summary { margin-bottom: var(--mat-space-3); }
+
+/* ---- The box that finishes a todo ---- */
+.np-donecheck { margin: 0; }
+
+/* ---- Rows that carry a form beside a link (an attachment, a task on the dashboard) ---- */
+.np-attachment { display: flex; align-items: center; gap: var(--mat-space-2); }
+.np-attachment > .mat-listgroup__item { flex: 1; min-width: 0; }
+.np-attachment__check { padding-left: var(--mat-space-3); }
+.np-due { white-space: nowrap; font-size: var(--mat-fs-sm); }
+
+/* ---- Comments ---- */
+.np-comments { list-style: none; padding: 0; margin: 0 0 var(--mat-space-4); display: grid; gap: var(--mat-space-4); }
+.np-comment { display: flex; align-items: flex-start; gap: var(--mat-space-3); }
+.np-comment__body { flex: 1; min-width: 0; }
+.np-comment__body p { margin: var(--mat-space-1) 0 0; }
+.np-comment__head { display: flex; flex-wrap: wrap; gap: var(--mat-space-2); align-items: baseline; }
+
+/* ---- Checklist and dependencies ---- */
+.np-checklist { list-style: none; padding: 0; margin: 0 0 var(--mat-space-3); display: grid; gap: var(--mat-space-1); }
+.np-checkbtn { display: flex; align-items: center; gap: var(--mat-space-2); width: 100%; min-height: var(--mat-control-h); text-align: left; background: none; border: 0; padding: var(--mat-space-1) var(--mat-space-2); border-radius: var(--mat-radius-sm); color: var(--mat-text); cursor: pointer; font: inherit; }
+.np-checkbtn:hover { background: var(--mat-surface-3); }
+.np-checkbtn.is-done .mat-icon { color: var(--mat-success-text); }
+.np-deps { list-style: none; padding: 0; margin: 0 0 var(--mat-space-3); display: grid; gap: var(--mat-space-2); }
+.np-deps li { display: flex; align-items: center; gap: var(--mat-space-2); }
+
+/* ---- History: a line with an icon for each event ---- */
+.np-timeline { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--mat-space-4); }
+.np-timeline__item { display: flex; gap: var(--mat-space-3); align-items: flex-start; }
+.np-timeline__icon { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--mat-surface-3); color: var(--mat-text-muted); }
+
+/* ---- The dashboard: projects with their bars ---- */
+.np-projectlist { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--mat-space-4); }
+.np-projectlist li { display: grid; gap: var(--mat-space-1); }
+.np-projectlist__meta { display: flex; align-items: center; gap: var(--mat-space-2); font-size: var(--mat-fs-sm); }
+
+/* ---- The board ---- */
+.np-board { display: grid; grid-template-columns: repeat(5, minmax(12.5rem, 1fr)); gap: var(--mat-space-3); overflow-x: auto; padding-bottom: var(--mat-space-2); align-items: start; }
+.np-board__col { background: var(--mat-surface-2); border: 1px solid var(--mat-border); border-radius: var(--mat-radius-lg); min-width: 0; display: flex; flex-direction: column; }
+.np-board__head { display: flex; align-items: center; gap: var(--mat-space-2); padding: var(--mat-space-3) var(--mat-space-3) var(--mat-space-2); }
+.np-board__head h3 { margin: 0; font-size: var(--mat-fs-md); flex: 1; }
+.np-board__cards { display: grid; gap: var(--mat-space-2); padding: var(--mat-space-2) var(--mat-space-3) var(--mat-space-3); min-height: 4rem; align-content: start; }
+.np-board__col.is-over { border-color: var(--mat-accent); background: var(--mat-accent-soft); }
+.np-board__col--blocked .np-board__head .mat-icon { color: var(--mat-danger-text); }
+.np-board__col--done .np-board__head .mat-icon { color: var(--mat-success-text); }
+.np-board__more { margin: 0; font-size: var(--mat-fs-sm); }
+.np-card { background: var(--mat-surface); border: 1px solid var(--mat-border); border-radius: var(--mat-radius); padding: var(--mat-space-3); display: grid; gap: var(--mat-space-2); cursor: grab; }
+.np-card:hover { border-color: var(--mat-text-faint); }
+.np-card.is-dragging { opacity: .5; }
+.np-card.is-busy { opacity: .6; pointer-events: none; }
+.np-card__title { font-weight: 600; text-decoration: none; color: var(--mat-text); overflow-wrap: anywhere; }
+.np-card__title:hover { color: var(--mat-accent-text); }
+.np-card__sub { display: block; }
+.np-card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--mat-space-2); font-size: var(--mat-fs-sm); }
+.np-card__due { display: inline-flex; align-items: center; gap: var(--mat-space-1); }
+.np-card__owner { margin-left: auto; }
+.np-card__move .mat-select { width: 100%; }
+@media (max-width: 899px) {
+  .np-board { grid-template-columns: 1fr; overflow-x: visible; }
+  .np-card { cursor: default; }
+}
+
+/* ---- The schedule of a project: positions come from data-np-bar (app.js) ---- */
+.np-timeline-chart { display: grid; gap: var(--mat-space-2); }
+.np-tl__scale, .np-tl__row { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr minmax(6rem, 11rem); gap: var(--mat-space-3); align-items: center; }
+.np-tl__scale { position: relative; height: 1.5rem; margin-left: calc(14rem + var(--mat-space-3)); margin-right: calc(11rem + var(--mat-space-3)); display: block; border-bottom: 1px solid var(--mat-border); }
+.np-tl__month { position: absolute; left: var(--np-left, 0%); font-size: var(--mat-fs-xs); color: var(--mat-text-muted); white-space: nowrap; }
+.np-tl__rows { position: relative; display: grid; gap: var(--mat-space-2); }
+.np-tl__label { display: flex; align-items: center; gap: var(--mat-space-1); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--mat-text); }
+.np-tl__label span { overflow: hidden; text-overflow: ellipsis; }
+.np-tl__track { position: relative; height: 1.4rem; background: var(--mat-surface-2); border-radius: var(--mat-radius-sm); }
+.np-tl__bar { position: absolute; top: 3px; bottom: 3px; left: var(--np-left, 0%); width: var(--np-width, 2%); border-radius: var(--mat-radius-xs); background: var(--mat-info-text); }
+.np-tl__bar--plain { background: var(--mat-text-faint); }
+.np-tl__bar--ok { background: var(--mat-success-text); }
+.np-tl__bar--error { background: var(--mat-danger-text); }
+.np-tl__bar--busy { background: var(--mat-accent); }
+.np-tl__mark { position: absolute; top: 2px; left: calc(var(--np-left, 0%) - .55rem); width: 1.1rem; height: 1.1rem; transform: rotate(45deg) scale(.8); background: var(--mat-accent); border-radius: 2px; }
+.np-tl__mark--ok { background: var(--mat-success-text); }
+.np-tl__mark--error { background: var(--mat-danger-text); }
+.np-tl__mark--info { background: var(--mat-info-text); }
+.np-tl__today { position: absolute; top: 0; bottom: 0; left: calc(14rem + var(--mat-space-3)); width: 0; pointer-events: none; }
+.np-tl__today::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; border-left: 2px dashed var(--mat-accent); }
+.np-tl__dates { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 899px) {
+  .np-tl__scale { margin: 0; }
+  .np-tl__row { grid-template-columns: 1fr; gap: var(--mat-space-1); }
+  .np-tl__today { display: none; }
+}
+
+/* ---- The calendar ---- */
+.np-calendar { margin-top: var(--mat-space-3); }
+
+/* ---- A page behind a share link ---- */
+.np-share { display: grid; gap: var(--mat-space-4); max-width: 64rem; margin-inline: auto; }
+.np-share__brand { display: flex; align-items: center; gap: var(--mat-space-3); }
+
+/* ---- Charts (UiKit/BarChart): one series, thin marks, quiet baseline, the accent as the colour ---- */
+.np-chart { margin: 0; }
+.np-chart svg { width: 100%; height: auto; max-height: 11rem; display: block; }
+.np-chart__base { stroke: var(--mat-border-strong); stroke-width: 1; }
+.np-chart__mark { fill: var(--mat-accent); }
+.np-chart__hit { fill: transparent; }
+.np-chart__bar:hover .np-chart__mark, .np-chart__bar:focus .np-chart__mark { fill: var(--mat-accent-hover); }
+.np-chart__bar:hover .np-chart__hit, .np-chart__bar:focus .np-chart__hit { fill: var(--mat-accent-soft); }
+.np-chart__bar:focus { outline: none; }
+.np-chart__label { fill: var(--mat-text-muted); font-size: 10px; }
+
+/* ---- Scrollbars: hidden until something scrolls, then thin and in the colours of the app ---- */
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+*:hover, *:focus-within, .is-scrolling { scrollbar-color: var(--mat-border-strong) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: transparent; border-radius: var(--mat-radius-pill); }
+*:hover::-webkit-scrollbar-thumb, .is-scrolling::-webkit-scrollbar-thumb { background: var(--mat-border-strong); }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- A column beside the main content is narrow: label above the value ---- */
+.mat-col-lg-4 .mat-kv, .mat-col-lg-5 .mat-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.mat-col-lg-4 .mat-kv dd, .mat-col-lg-5 .mat-kv dd { margin-bottom: var(--mat-space-3); }

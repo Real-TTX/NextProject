@@ -1,0 +1,22 @@
+@page
+@model NextProject.Pages.Admin.Departments.EditModel
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+    <np-card title="Abteilung" icon="briefcase">
+        <div class="mat-form__grid">
+            <np-input for="Input.Name" label="Name" full="true" required="true" />
+            <np-textarea for="Input.Description" label="Beschreibung" rows="2" full="true" />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="/Admin/Departments" delete-url="@Url.Page("/Admin/Departments/Edit", "Delete", new { id = Model.Id })" delete-confirm="Diese Abteilung löschen? Wer ihr zugeordnet ist, hat danach keine." />
+    }
+    else
+    {
+        <np-buttons back-href="/Admin/Departments" />
+    }
+</form>

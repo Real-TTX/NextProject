@@ -1,0 +1,153 @@
+@page
+@model NextProject.Pages.Goals.DetailsModel
+@{
+    var g = Model.Goal;
+    var f = Model.Facts;
+}
+
+<div class="np-head">
+    <a class="mat-btn mat-btn--ghost mat-btn--icon" href="/Goals" aria-label="Zurück zu den Zielen" data-tip="Zurück">@Ui.Icon("back")</a>
+    <div class="np-head__text">
+        <h1>@g.Title @Labels.Pill(g.Status)</h1>
+        <p class="mat-page__sub">@g.Year@(g.Department is not null ? " · " + g.Department.Name : " · ganzes Unternehmen")@(g.OwnerUser is not null ? " · verantwortlich: " + g.OwnerUser.DisplayName : "")</p>
+    </div>
+</div>
+
+<div class="mat-grid mat-grid--4">
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(f.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(f.KeyResults == 0 ? "noch nicht gemessen: Schlüsselergebnis fehlt" : "Durchschnitt der Schlüsselergebnisse")</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Schlüsselergebnisse</span><span class="mat-stat__value">@f.KeyResultsReached/@f.KeyResults</span><span class="mat-stat__delta">erreicht</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projekte</span><span class="mat-stat__value">@f.Projects</span><span class="mat-stat__delta">zahlen auf das Ziel ein</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Todos erledigt</span><span class="mat-stat__value">@Fmt.Percent(f.Todos.Completion)</span><span class="mat-stat__delta">@f.Todos.Done von @(f.Todos.Total - f.Todos.Discarded) · die Arbeit dahinter</span></div></div>
+</div>
+
+<div class="mat-actions">
+    <a class="mat-btn mat-btn--primary" href="/Goals/KeyResult?goalId=@g.Id">@Ui.Icon("plus")<span>Schlüsselergebnis</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/Projects/Edit?goalId=@g.Id">@Ui.Icon("folder")<span>Neues Projekt</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/Reviews/Edit?goalId=@g.Id">@Ui.Icon("history")<span>Review</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/Goals/Edit?id=@g.Id">@Ui.Icon("edit")<span>Bearbeiten</span></a>
+    <a class="mat-btn mat-btn--secondary" href="/Shares/Create?kind=Goal&id=@g.Id">@Ui.Icon("share")<span>Freigeben</span></a>
+</div>
+
+<np-tabs id="goal-tabs" label="Zum Ziel" selected="@Model.Tab">
+    <np-tab id="overview" title="Übersicht" icon="dashboard">
+        <div class="mat-cols">
+            <div class="mat-col-12 mat-col-lg-6 mat-stack">
+                <np-card title="Bedeutung" icon="info"><p class="np-prewrap">@(g.Description ?? "Noch nicht beschrieben. Warum ist dieses Ziel wichtig?")</p></np-card>
+            </div>
+            <div class="mat-col-12 mat-col-lg-6 mat-stack">
+                <np-card title="Zielwerte @g.Year" icon="calendar">
+                    <dl class="mat-kv">
+                        <dt>Jahresziel</dt><dd class="np-prewrap">@(g.YearTarget ?? "–")</dd>
+                        <dt>Quartal 1</dt><dd class="np-prewrap">@(g.Q1Target ?? "–")</dd>
+                        <dt>Quartal 2</dt><dd class="np-prewrap">@(g.Q2Target ?? "–")</dd>
+                        <dt>Quartal 3</dt><dd class="np-prewrap">@(g.Q3Target ?? "–")</dd>
+                        <dt>Quartal 4</dt><dd class="np-prewrap">@(g.Q4Target ?? "–")</dd>
+                    </dl>
+                </np-card>
+            </div>
+        </div>
+    </np-tab>
+
+    <np-tab id="results" title="Schlüsselergebnisse" icon="trending-up" count="@g.KeyResults.Count">
+        @if (g.KeyResults.Count == 0)
+        {
+            <p class="mat-muted">Noch kein Schlüsselergebnis. Ohne eines kann niemand sagen, ob das Ziel erreicht wird: erledigte Todos reichen dafür nicht.</p>
+        }
+        else
+        {
+            <div class="mat-table-wrap">
+                <table class="mat-table" id="keyresult-table">
+                    <caption class="mat-sr-only">Schlüsselergebnisse</caption>
+                    <thead><tr><th scope="col">Schlüsselergebnis</th><th scope="col" class="mat-hide-sm">Verantwortlich</th><th scope="col" class="mat-num">Start</th><th scope="col" class="mat-num">Aktuell</th><th scope="col" class="mat-num">Ziel</th><th scope="col">Erreicht</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr></thead>
+                    <tbody>
+                        @foreach (var k in g.KeyResults.OrderBy(k => k.Title))
+                        {
+                            <tr>
+                                <td data-label="Schlüsselergebnis"><div class="np-name"><a href="/Goals/KeyResult?id=@k.Id">@k.Title</a><small class="mat-muted np-sub">@(k.Metric ?? "")@(k.Project is not null ? (k.Metric is null ? "" : " · ") + "Projekt: " + k.Project.Name : "")</small></div></td>
+                                <td data-label="Verantwortlich" class="mat-hide-sm">@Ui.Person(k.OwnerUser?.DisplayName)</td>
+                                <td data-label="Start" class="mat-num">@Fmt.Number(k.StartValue, 1) @k.Unit</td>
+                                <td data-label="Aktuell" class="mat-num">@Fmt.Number(k.CurrentValue, 1) @k.Unit</td>
+                                <td data-label="Ziel" class="mat-num">@Fmt.Number(k.TargetValue, 1) @k.Unit</td>
+                                <td data-label="Erreicht">@Ui.Meter(k.Attainment, "Erreichung")</td>
+                                <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Goals/CheckIn?keyResultId=@k.Id" aria-label="Messung eintragen" data-tip="Messung eintragen">@Ui.Icon("plus")</a><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Goals/KeyResult?id=@k.Id" aria-label="Bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="mat-actions np-addform"><a class="mat-btn mat-btn--primary" href="/Goals/KeyResult?goalId=@g.Id">@Ui.Icon("plus")<span>Neues Schlüsselergebnis</span></a></div>
+    </np-tab>
+
+    <np-tab id="projects" title="Projekte" icon="folder" count="@g.Projects.Count">
+        @if (g.Projects.Count == 0)
+        {
+            <p class="mat-muted">Noch kein Projekt zahlt auf dieses Ziel ein.</p>
+        }
+        else
+        {
+            <div class="mat-table-wrap">
+                <table class="mat-table" id="goal-project-table">
+                    <caption class="mat-sr-only">Projekte des Ziels</caption>
+                    <thead><tr><th scope="col">Projekt</th><th scope="col" class="mat-hide-sm">Projektowner</th><th scope="col">Status</th><th scope="col">Todos erledigt</th></tr></thead>
+                    <tbody>
+                        @foreach (var gp in g.Projects.Where(x => x.Project is not null).OrderBy(x => x.Project!.Name))
+                        {
+                            var pf = Model.ProjectFacts.GetValueOrDefault(gp.ProjectId);
+                            <tr>
+                                <td data-label="Projekt"><a href="/Projects/Details?id=@gp.ProjectId">@gp.Project!.Name</a></td>
+                                <td data-label="Projektowner" class="mat-hide-sm">@Ui.Person(gp.Project.OwnerUser?.DisplayName)</td>
+                                <td data-label="Status">@Labels.Pill(gp.Project.Status)</td>
+                                <td data-label="Todos erledigt">@Ui.Meter(pf is not null && pf.Todos.Total - pf.Todos.Discarded > 0 ? pf.Todos.Completion : null, "Erledigte Todos")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </np-tab>
+
+    <np-tab id="todos" title="Todos" icon="check-square" count="@Model.Facts.Todos.Total">
+        <div class="mat-list">
+            <partial name="_Toolbar" model="Model.Toolbar" />
+            <partial name="_Table" model="Model.TodosTable" />
+            <partial name="_Pager" model="Model.Pager" />
+            <div class="mat-actions">
+                <a class="mat-btn mat-btn--primary" href="/Todos/Edit?goalId=@g.Id&returnUrl=@Uri.EscapeDataString("/Goals/Details?id=" + g.Id + "&tab=todos")">@Ui.Icon("plus")<span>Neue Maßnahme</span></a>
+            </div>
+        </div>
+    </np-tab>
+
+    <np-tab id="reviews" title="Reviews" icon="history" count="@Model.Reviews.Count">
+        @if (Model.Reviews.Count == 0)
+        {
+            <p class="mat-muted">Noch kein Review. Ein Review schaut nach: wirkt die Umsetzung wie geplant, was lernen wir, wo justieren wir?</p>
+        }
+        else
+        {
+            <ul class="mat-listgroup mat-listgroup--flush">
+                @foreach (var r in Model.Reviews)
+                {
+                    <li><a class="mat-listgroup__item" href="/Reviews/Edit?id=@r.Id">@Ui.Icon("history")<span class="mat-listgroup__text"><strong>Review vom @Fmt.Date(r.ReviewDate)</strong><small>@r.CreateUser?.DisplayName@(r.Deviation is { Length: > 0 } ? " · " + r.Deviation : "")</small></span>@Labels.Pill(r.Health)</a></li>
+                }
+            </ul>
+        }
+    </np-tab>
+
+    <np-tab id="history" title="Verlauf" icon="clock" count="@Model.History.Count">
+        @if (Model.History.Count == 0)
+        {
+            <p class="mat-muted">Noch nichts passiert.</p>
+        }
+        else
+        {
+            <ul class="np-timeline">
+                @foreach (var h in Model.History)
+                {
+                    <li class="np-timeline__item"><span class="np-timeline__icon">@Ui.Icon(Labels.Icon(h.Kind))</span><div><div><strong>@(h.UserName ?? "System")</strong> · @HistoryService.Describe(h)</div><small class="mat-muted">@Fmt.Moment(h.OccurredDate)</small></div></li>
+                }
+            </ul>
+        }
+    </np-tab>
+</np-tabs>

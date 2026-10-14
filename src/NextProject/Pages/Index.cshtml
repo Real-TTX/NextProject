@@ -1,0 +1,117 @@
+@page
+@model NextProject.Pages.IndexModel
+
+<div class="mat-page__head">
+    <div class="mat-page__title">
+        <h1>Hallo@(Model.FirstName.Length > 0 ? ", " + Model.FirstName : "")</h1>
+        <p class="mat-page__sub">So steht es um deine Aufgaben, Projekte und Ziele.</p>
+    </div>
+</div>
+
+@if (Model.IsEmpty)
+{
+    <np-card title="Los geht's" icon="rocket" sub="drei Schritte">
+        <ul class="mat-listgroup mat-listgroup--flush">
+            <li><a class="mat-listgroup__item" href="/Goals/Edit">@Ui.Icon("target")<span class="mat-listgroup__text"><strong>1. Ein Ziel anlegen</strong><small>Was soll das Unternehmen erreichen, und woran misst du es?</small></span></a></li>
+            <li><a class="mat-listgroup__item" href="/Projects/Edit">@Ui.Icon("folder")<span class="mat-listgroup__text"><strong>2. Ein Projekt anlegen</strong><small>Welche Initiative zahlt auf das Ziel ein, und wer ist der Projektowner?</small></span></a></li>
+            <li><a class="mat-listgroup__item" href="/Todos/Edit">@Ui.Icon("check-square")<span class="mat-listgroup__text"><strong>3. Ein Todo anlegen</strong><small>Eine Aufgabe mit einer verantwortlichen Person und einem Termin.</small></span></a></li>
+        </ul>
+        @if (User.IsInRole("Admin"))
+        {
+            <p class="mat-hint">Zum Ausprobieren gibt es unter Einstellungen › System Beispieldaten.</p>
+        }
+    </np-card>
+}
+
+<div class="mat-grid mat-grid--4">
+    <a class="mat-card np-statlink" href="/Todos"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Meine Todos</span><span class="mat-stat__value">@Model.MyOpen</span><span class="mat-stat__delta @(Model.MyOverdue > 0 ? "mat-stat__delta--down" : "")">@(Model.MyOverdue > 0 ? Model.MyOverdue + " überfällig" : "nichts überfällig")</span></div></a>
+    <a class="mat-card np-statlink" href="/Projects"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Meine Projekte</span><span class="mat-stat__value">@Model.MyProjects</span><span class="mat-stat__delta @(Model.MyProjectsAtRisk > 0 ? "mat-stat__delta--down" : "")">@(Model.MyProjectsAtRisk > 0 ? Model.MyProjectsAtRisk + " gefährdet" : "keins gefährdet")</span></div></a>
+    <a class="mat-card np-statlink" href="/Goals"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziele & Schlüsselergebnisse</span><span class="mat-stat__value">@Model.ActiveGoals / @Model.KeyResults</span><span class="mat-stat__delta @(Model.KeyResultsLate > 0 ? "mat-stat__delta--down" : "")">@(Model.KeyResultsLate > 0 ? Model.KeyResultsLate + " Schlüsselergebnisse im Rückstand" : "kein Rückstand")</span></div></a>
+    <a class="mat-card np-statlink" href="/Reports"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Team-Status</span><span class="mat-stat__value">@Model.TeamState</span><span class="mat-stat__delta @(Model.TeamBlocked > 0 ? "mat-stat__delta--down" : "")">@(Model.TeamBlocked > 0 ? Model.TeamBlocked + " blockiert" : "keine Blockaden")@(Model.TeamOverdue > 0 ? ", " + Model.TeamOverdue + " überfällig" : "")</span></div></a>
+</div>
+
+<div class="mat-cols">
+    <div class="mat-col-12 mat-col-lg-7 mat-stack">
+        <np-card title="Meine heutigen Aufgaben" icon="check-square" sub="@Fmt.Date(Model.Today)">
+            @if (Model.TodayTodos.Count == 0)
+            {
+                <p class="mat-muted">Für heute ist nichts fällig und nichts in Arbeit. Zeit für etwas Neues oder für einen Blick auf die Woche.</p>
+            }
+            else
+            {
+                <ul class="mat-listgroup mat-listgroup--flush">
+                    @foreach (var t in Model.TodayTodos)
+                    {
+                        var overdue = t.IsOverdue(Model.Today);
+                        <li class="np-attachment">
+                            <span class="np-attachment__check">@TodoTable.Check(t)</span>
+                            <a class="mat-listgroup__item" href="/Todos/Details?id=@t.Id"><span class="mat-listgroup__text"><strong>@t.Title</strong><small>@(t.Project?.Name ?? "eigenständig")</small></span>@Labels.Pill(t.Status)<span class="np-due @(overdue ? "np-overdue" : "mat-muted")">@(t.DueDate is null ? "" : Fmt.Due(t.DueDate, Model.Today))</span></a>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <div class="mat-actions np-addform">
+                <a class="mat-btn mat-btn--primary" href="/Todos/Edit">@Ui.Icon("plus")<span>Neues Todo</span></a>
+                <a class="mat-btn mat-btn--secondary" href="/Todos">@Ui.Icon("list")<span>Alle meine Todos</span></a>
+            </div>
+        </np-card>
+
+        @if (Model.SoonTodos.Count > 0)
+        {
+            <np-card title="Demnächst fällig" icon="calendar">
+                <ul class="mat-listgroup mat-listgroup--flush">
+                    @foreach (var t in Model.SoonTodos)
+                    {
+                        <li><a class="mat-listgroup__item" href="/Todos/Details?id=@t.Id">@Ui.Icon("clock")<span class="mat-listgroup__text"><strong>@t.Title</strong><small>@(t.Project?.Name ?? "eigenständig")</small></span><span class="mat-muted">@Fmt.Due(t.DueDate, Model.Today)</span></a></li>
+                    }
+                </ul>
+            </np-card>
+        }
+    </div>
+
+    <div class="mat-col-12 mat-col-lg-5 mat-stack">
+        <np-card title="Projektfortschritt" icon="folder">
+            @if (Model.Projects.Count == 0)
+            {
+                <p class="mat-muted">Du bist an keinem laufenden Projekt beteiligt.</p>
+            }
+            else
+            {
+                <ul class="np-projectlist">
+                    @foreach (var line in Model.Projects)
+                    {
+                        <li>
+                            <a href="/Projects/Details?id=@line.Project.Id"><strong>@line.Project.Name</strong></a>
+                            <div class="np-projectlist__meta">@Labels.Pill(line.Project.Status)@if (line.Facts.IsEndangered) { <span class="np-overdue">@Ui.Icon("alert") gefährdet</span> }</div>
+                            @Ui.Meter(line.Facts.Todos.Total - line.Facts.Todos.Discarded > 0 ? line.Facts.Todos.Completion : null, "Erledigte Todos")
+                        </li>
+                    }
+                </ul>
+            }
+
+            <div class="mat-actions np-addform"><a class="mat-btn mat-btn--secondary" href="/Projects">@Ui.Icon("folder")<span>Alle Projekte</span></a></div>
+        </np-card>
+
+        <np-card title="Risiken & Blockaden" icon="alert">
+            @if (Model.Blocked.Count == 0 && Model.Risks.Count == 0)
+            {
+                <p class="mat-muted">Keine Blockaden und keine hohen Risiken. So soll es sein.</p>
+            }
+            else
+            {
+                <ul class="mat-listgroup mat-listgroup--flush">
+                    @foreach (var t in Model.Blocked)
+                    {
+                        <li><a class="mat-listgroup__item" href="/Todos/Details?id=@t.Id">@Ui.Icon("lock")<span class="mat-listgroup__text"><strong>@t.Title</strong><small>@t.OwnerUser?.DisplayName · @t.BlockReason</small></span></a></li>
+                    }
+
+                    @foreach (var r in Model.Risks)
+                    {
+                        <li><a class="mat-listgroup__item" href="/Projects/Details?id=@r.ProjectId&tab=risks">@Ui.Icon("alert")<span class="mat-listgroup__text"><strong>@r.Title</strong><small>@r.Project?.Name · @Labels.Of(r.Status)</small></span></a></li>
+                    }
+                </ul>
+            }
+        </np-card>
+    </div>
+</div>

@@ -1,0 +1,29 @@
+@page
+@model NextProject.Pages.Projects.MilestoneModel
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="ProjectId" value="@Model.ProjectId" />
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+    <np-card title="Meilenstein" icon="flag" sub="@Model.ProjectName">
+        <div class="mat-form__grid">
+            <np-input for="Input.Title" label="Titel" full="true" required="true" />
+            <np-textarea for="Input.Description" label="Beschreibung" rows="2" full="true" hint="Woran erkennt man, dass er erreicht ist?" />
+            <np-input for="Input.DueDate" label="Fällig am" type="date" required="true" />
+            <np-input for="Input.ReachedDate" label="Erreicht am" type="date" clearable="true" hint="Leer lassen, solange er nicht erreicht ist." />
+        </div>
+        @if (Model.Id is not null && Model.OpenTodos > 0)
+        {
+            <p class="mat-hint">@Ui.Plural(Model.OpenTodos, "Todo dazu ist", "Todos dazu sind") noch nicht erledigt. Ein Meilenstein gilt trotzdem erst als erreicht, wenn du ein Datum einträgst.</p>
+        }
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@($"/Projects/Details?id={Model.ProjectId}&tab=milestones")" delete-url="@Url.Page("/Projects/Milestone", "Delete", new { projectId = Model.ProjectId, id = Model.Id })" delete-confirm="Diesen Meilenstein löschen? Seine Todos bleiben im Projekt." />
+    }
+    else
+    {
+        <np-buttons back-href="@($"/Projects/Details?id={Model.ProjectId}&tab=milestones")" />
+    }
+</form>

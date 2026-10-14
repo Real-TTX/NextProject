@@ -1,0 +1,59 @@
+@page
+@model NextProject.Pages.Shares.CreateModel
+@{
+    var now = DateTime.UtcNow;
+}
+
+@if (Model.Created is not null)
+{
+    <np-card title="Der Link ist fertig" icon="check-circle">
+        <p>Gib ihn weiter. Wer ihn hat, sieht <strong>@Model.TargetName</strong> nur lesend, bis @Fmt.Date(Model.Created.ExpiresDate)@(Model.Created.PasswordHash is not null ? ", nach Eingabe des Passworts" : "").</p>
+        <div class="mat-field">
+            <label class="mat-label" for="created-url">Adresse</label>
+            <div class="mat-input-group">
+                <input class="mat-input mat-mono" id="created-url" value="@Model.CreatedUrl" readonly />
+                <button type="button" class="mat-btn mat-btn--secondary" data-copy="#created-url">@Ui.Icon("copy")<span>Kopieren</span></button>
+            </div>
+        </div>
+    </np-card>
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Kind" value="@Model.Kind" />
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+    <np-card title="Neuer Link" icon="share">
+        <div class="mat-form__grid">
+            <np-input for="Input.Title" label="Titel" full="true" required="true" hint="Das sieht die Person oben auf der Seite." />
+            <np-input for="Input.RecipientName" label="Für" hint="Nur für dich: wem du den Link gibst." />
+            <np-input for="Input.Days" label="Gültig für Tage" type="number" min="1" max="365" />
+            <np-input for="Input.Password" label="Passwort" type="password" autocomplete="new-password" hint="Freiwillig. Leer: Wer den Link kennt, kommt hinein." />
+            <np-switch for="Input.ShowTodos" label="Einzelne Todos zeigen (Titel, Status, Verantwortliche, Termin)" full="true" />
+            <np-textarea for="Input.Message" label="Nachricht" rows="2" full="true" hint="Steht oben auf der Seite, zum Beispiel „Stand vor dem Termin am Montag“." />
+        </div>
+    </np-card>
+    <np-buttons back-href="@Model.BackHref" save-text="Link erstellen" save-icon="share" />
+</form>
+
+@if (Model.Links.Count > 0)
+{
+    <np-card title="Bestehende Links" icon="link">
+        <ul class="mat-listgroup mat-listgroup--flush">
+            @foreach (var l in Model.Links)
+            {
+                var active = l.IsActive(now);
+                <li class="np-attachment">
+                    <div class="mat-listgroup__item">
+                        @Ui.Icon(active ? "link" : "lock")
+                        <span class="mat-listgroup__text"><strong>@l.Title@(l.RecipientName is { Length: > 0 } ? " für " + l.RecipientName : "")</strong><small>@(l.RevokedDate is not null ? "widerrufen" : l.ExpiresDate <= now ? "abgelaufen am " + Fmt.Date(l.ExpiresDate) : "gültig bis " + Fmt.Date(l.ExpiresDate)) · @Ui.Plural(l.ViewCount, "Aufruf", "Aufrufe")@(l.PasswordHash is not null ? " · mit Passwort" : "")</small></span>
+                    </div>
+                    @if (active)
+                    {
+                        <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" data-copy="@Model.UrlOf(l)" aria-label="Adresse kopieren" data-tip="Adresse kopieren">@Ui.Icon("copy")</button>
+                        <form method="post" asp-page-handler="Revoke" asp-route-kind="@Model.Kind" asp-route-id="@Model.Id" asp-route-linkId="@l.Id"><button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="Link widerrufen" data-tip="Widerrufen" data-confirm="Diesen Link widerrufen? Wer ihn hat, sieht nichts mehr." data-confirm-ok="Widerrufen">@Ui.Icon("x-circle")</button></form>
+                    }
+                </li>
+            }
+        </ul>
+    </np-card>
+}

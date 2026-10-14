@@ -1,0 +1,17 @@
+@page
+@model NextProject.Pages.Todos.IndexModel
+
+<div class="mat-list">
+    <partial name="_LinkTabs" model="Model.Tabs" />
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Table" model="Model.Table" />
+    <partial name="_Pager" model="Model.Pager" />
+    @if (Model.ClosedHidden && Model.Toolbar.Total > 0)
+    {
+        <p class="mat-hint">Erledigte und verworfene Todos sind ausgeblendet. Mit dem Filter „Status“ siehst du sie.</p>
+    }
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Todos/Edit">@Ui.Icon("plus")<span>Neues Todo</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Todos/Board@(Model.Scope == "team" ? "" : "?mine=1")">@Ui.Icon("columns")<span>Board</span></a>
+    </div>
+</div>

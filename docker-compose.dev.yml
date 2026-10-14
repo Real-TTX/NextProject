@@ -1,0 +1,75 @@
+# NextProject - development stack: builds the image from the source in this folder.
+#   ./scripts/redeploy.ps1            (rebuilds the container and redeploys the stack)
+#   docker compose -f docker-compose.dev.yml up -d --build
+#
+# Web:      http://localhost:2860
+# pgAdmin:  http://localhost:2861   (admin@nextproject.example.com / nextproject)
+# Postgres: localhost:12860         (for tests and tools)
+name: nextproject-dev
+
+services:
+  nextproject:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        Channel: ${NEXTPROJECT_CHANNEL:-local}
+        BuildNumber: ${NEXTPROJECT_BUILD_NUMBER:-0}
+        BuildDate: ${NEXTPROJECT_BUILD_DATE:-}
+    image: nextproject:dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "2860:2860"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    volumes:
+      - nextproject-data:/data
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: nextproject
+      POSTGRES_DB: nextproject
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nextproject"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      # Only for local tests and tools.
+      - "12860:5432"
+    volumes:
+      - nextproject-db:/var/lib/postgresql/data
+
+  # Database UI of the development stack. Add the server "db" (user postgres, password nextproject).
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nextproject.example.com
+      PGADMIN_DEFAULT_PASSWORD: nextproject
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "2861:80"
+    depends_on:
+      - db
+    volumes:
+      - nextproject-pgadmin:/var/lib/pgadmin
+
+# An explicit subnet: on a PC with many stacks Docker runs out of its default address pools ("all predefined address pools
+# have been fully subnetted"). Override with NEXTPROJECT_DEV_SUBNET if this range collides with something.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${NEXTPROJECT_DEV_SUBNET:-10.253.28.0/24}
+
+volumes:
+  nextproject-data:
+  nextproject-db:
+  nextproject-pgadmin:

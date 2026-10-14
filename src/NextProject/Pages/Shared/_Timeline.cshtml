@@ -1,0 +1,37 @@
+@model TimelineView
+@*
+    The schedule of a project. app.js reads data-np-bar="left,width" (percent) and sets the position: there is no inline style. The dates are also written as text
+    in every row, so the picture is never the only way to read it.
+*@
+<div class="np-timeline-chart" role="group" aria-label="Zeitplan">
+    <div class="np-tl__scale" aria-hidden="true">
+        @foreach (var (label, left) in Model.Months)
+        {
+            <span class="np-tl__month" data-np-bar="@TimelineView.Css(left),0">@label</span>
+        }
+    </div>
+    <div class="np-tl__rows">
+        @if (Model.TodayLeft is { } today)
+        {
+            <span class="np-tl__today" data-np-bar="@TimelineView.Css(today),0" aria-hidden="true"></span>
+        }
+
+        @foreach (var row in Model.Rows)
+        {
+            <div class="np-tl__row">
+                <a class="np-tl__label" href="@row.Href">@(row.IsMilestone ? Ui.Icon("flag") : null)<span>@row.Label</span></a>
+                <div class="np-tl__track">
+                    @if (row.IsMilestone)
+                    {
+                        <span class="np-tl__mark np-tl__mark--@row.Tone" data-np-bar="@TimelineView.Css(row.Left),0" role="img" aria-label="Meilenstein @row.Label, @row.Dates@(row.Done ? ", erreicht" : "")"></span>
+                    }
+                    else
+                    {
+                        <span class="np-tl__bar np-tl__bar--@row.Tone" data-np-bar="@TimelineView.Css(row.Left),@TimelineView.Css(row.Width)" role="img" aria-label="@row.Label, @row.Dates"></span>
+                    }
+                </div>
+                <small class="np-tl__dates mat-muted">@row.Dates</small>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,73 @@
+@page
+@model NextProject.Pages.Goals.KeyResultModel
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+
+    <np-card title="Schlüsselergebnis" icon="trending-up" sub="ein Schritt zum Ziel, den man messen kann">
+        <div class="mat-form__grid">
+            <np-input for="Input.Title" label="Schlüsselergebnis" full="true" required="true" hint="Zum Beispiel „Die Anrufe zur Bestellverfolgung sinken auf 25 pro Woche“." />
+            <np-select for="Input.GoalId" label="Ziel" items="Model.Goals" required="true" empty="(Ziel wählen)" />
+            <np-select for="Input.ProjectId" label="Projekt" items="Model.Projects" empty="(kein Projekt)" hint="Das Projekt, das auf dieses Ergebnis hinarbeitet." />
+            <np-select for="Input.OwnerUserId" label="Verantwortlich" items="Model.Users" empty="(niemand bestimmt)" hint="Wer kümmert sich im Team darum?" />
+            <np-input for="Input.DueDate" label="Bis wann" type="date" clearable="true" />
+        </div>
+    </np-card>
+
+    <np-card title="Messung" icon="bar-chart" sub="so wird gezählt">
+        <div class="mat-form__grid">
+            <np-input for="Input.Metric" label="Messgröße" hint="Woran messen wir es? Zum Beispiel „Anrufe pro Woche“." />
+            <np-input for="Input.Collection" label="Erhebungsart" hint="Wie kommen wir an den Wert? Zum Beispiel „Strichliste“." />
+            <np-input for="Input.Unit" label="Einheit" hint="Anrufe, %, Stunden, €" />
+            <np-input for="Input.StartValue" label="Startwert" type="number" hint="Wie viel ist schon da? Ist etwas da, ist der Startwert nicht null." />
+            <np-input for="Input.TargetValue" label="Zielwert" type="number" hint="Er darf auch kleiner sein als der Startwert, wenn etwas sinken soll." />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@($"/Goals/Details?id={Model.Input.GoalId}&tab=results")" delete-url="@Url.Page("/Goals/KeyResult", "Delete", new { id = Model.Id })" delete-confirm="Dieses Schlüsselergebnis löschen? Seine Messungen gehen verloren, seine Todos gehören danach direkt zum Ziel.">
+            <a class="mat-btn mat-btn--secondary" href="/Goals/CheckIn?keyResultId=@Model.Id">@Ui.Icon("plus")<span>Messung eintragen</span></a>
+        </np-buttons>
+    }
+    else
+    {
+        <np-buttons back-href="/Goals" />
+    }
+</form>
+
+@if (Model.Result is { } result)
+{
+    <np-card title="Messungen" icon="bar-chart" sub="@($"{Fmt.Number(result.CurrentValue, 1)} {result.Unit} von {Fmt.Number(result.TargetValue, 1)} {result.Unit}")">
+        @if (result.CheckIns.Count == 0)
+        {
+            <p class="mat-muted">Noch keine Messung. Trage den ersten Wert ein, zum Beispiel am Monatsende.</p>
+        }
+        else
+        {
+            @Model.Chart
+            <div class="mat-table-wrap">
+                <table class="mat-table" id="checkin-table">
+                    <caption class="mat-sr-only">Messungen</caption>
+                    <thead><tr><th scope="col">Datum</th><th scope="col" class="mat-num">Wert</th><th scope="col">Wirkung</th><th scope="col" class="mat-hide-sm mat-num">Todos erledigt</th><th scope="col" class="mat-hide-sm">Kommentar</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in result.CheckIns.OrderByDescending(c => c.CheckInDate).ThenByDescending(c => c.Id))
+                        {
+                            <tr>
+                                <td data-label="Datum">@Fmt.Date(c.CheckInDate)</td>
+                                <td data-label="Wert" class="mat-num">@Fmt.Number(c.Value, 1) @result.Unit</td>
+                                <td data-label="Wirkung">@Ui.Meter(NextProject.Core.Planning.Progress.Attainment(result.StartValue, result.TargetValue, c.Value), "Erreichung bei dieser Messung")</td>
+                                <td data-label="Todos erledigt" class="mat-hide-sm mat-num">@(c.DonePercent is { } d ? d + " %" : "–")</td>
+                                <td data-label="Kommentar" class="mat-hide-sm">@c.Comment</td>
+                                <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Goals/CheckIn?keyResultId=@result.Id&id=@c.Id" aria-label="Messung bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <p class="mat-hint">„Wirkung“ ist, wie weit der gemessene Wert auf dem Weg zum Ziel ist. „Todos erledigt“ ist der Anteil der Aufgaben zu diesem Ergebnis, der zur Zeit der Messung erledigt war. Beides kann auseinanderlaufen: das ist die eigentliche Information.</p>
+    </np-card>
+}

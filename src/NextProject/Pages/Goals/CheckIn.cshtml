@@ -1,0 +1,24 @@
+@page
+@model NextProject.Pages.Goals.CheckInModel
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="KeyResultId" value="@Model.KeyResultId" />
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+    <np-card title="@Model.Result.Title" icon="trending-up" sub="@($"von {Fmt.Number(Model.Result.StartValue, 1)} auf {Fmt.Number(Model.Result.TargetValue, 1)} {Model.Result.Unit}")">
+        <div class="mat-form__grid">
+            <np-input for="Input.CheckInDate" label="Datum" type="date" required="true" />
+            <np-input for="Input.Value" label="@("Gemessener Wert" + (string.IsNullOrEmpty(Model.Result.Unit) ? "" : " in " + Model.Result.Unit))" type="number" required="true" hint="@(Model.Result.Metric is { Length: > 0 } m ? m + (Model.Result.Collection is { Length: > 0 } c ? ", erhoben mit: " + c : "") : null)" />
+            <np-textarea for="Input.Comment" label="Kommentar" rows="2" full="true" hint="Was erklärt den Wert? Was hat gewirkt?" />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@($"/Goals/KeyResult?id={Model.KeyResultId}")" delete-url="@Url.Page("/Goals/CheckIn", "Delete", new { keyResultId = Model.KeyResultId, id = Model.Id })" delete-confirm="Diese Messung löschen?" />
+    }
+    else
+    {
+        <np-buttons back-href="@($"/Goals/KeyResult?id={Model.KeyResultId}")" />
+    }
+</form>

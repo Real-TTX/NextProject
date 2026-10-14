@@ -1,0 +1,53 @@
+@page
+@model NextProject.Pages.Projects.EditModel
+@{
+    var statuses = Controls.Options.Of<ProjectStatus>(Labels.Of);
+    var priorities = Controls.Options.Of<Level>(Labels.Of);
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+
+    <np-card title="Projekt" icon="folder">
+        <div class="mat-form__grid">
+            <np-input for="Input.Name" label="Name" full="true" required="true" />
+            <np-textarea for="Input.Description" label="Beschreibung" rows="3" full="true" />
+            <np-textarea for="Input.Objective" label="Zielsetzung" rows="2" full="true" hint="Was soll das Projekt erreichen?" />
+            <np-textarea for="Input.ExpectedResult" label="Erwartetes Ergebnis" rows="2" full="true" hint="Woran erkennen wir, dass das Projekt geliefert hat?" />
+            <np-textarea for="Input.AddedValue" label="Mehrwert" rows="2" full="true" hint="Was hat das Unternehmen davon?" />
+        </div>
+    </np-card>
+
+    <np-card title="Verantwortung und Zeit" icon="users">
+        <div class="mat-form__grid">
+            <np-select for="Input.OwnerUserId" label="Projektowner" items="Model.Users" required="true" hint="Steuert das Projekt als Ganzes. Die Todos können anderen gehören." />
+            <np-select for="Input.DepartmentId" label="Abteilung" items="Model.Departments" empty="(keine)" />
+            <np-picker for="Input.MemberIds" label="Beteiligte" items="Model.UserChoices" multiple="true" full="true" placeholder="Niemand" />
+            <np-input for="Input.StartDate" label="Startdatum" type="date" clearable="true" />
+            <np-input for="Input.EndDate" label="Enddatum" type="date" clearable="true" />
+            <np-select for="Input.Status" label="Status" items="statuses" />
+            <np-radios for="Input.Priority" label="Priorität" items="priorities" />
+        </div>
+    </np-card>
+
+    <np-card title="Wirkung und Abhängigkeiten" icon="target">
+        <div class="mat-form__grid">
+            <np-picker for="Input.GoalIds" label="Ziele" items="Model.Goals" multiple="true" full="true" placeholder="Keinem Ziel zugeordnet" hint="Ein Projekt kann auf mehrere Ziele einzahlen." />
+            <np-picker for="Input.DependsOnIds" label="Hängt ab von" items="Model.ProjectChoices" multiple="true" full="true" placeholder="Von keinem Projekt" />
+            <np-input for="Input.Budget" label="Kostenaufwand (€)" type="number" min="0" />
+            <np-input for="Input.Resources" label="Ressourcenaufwand" hint="Zum Beispiel „40 Personentage“." />
+            <np-textarea for="Input.InfluenceFactors" label="Einflussfaktoren (+/-)" rows="2" full="true" hint="Was hilft, was bremst?" />
+            <np-textarea for="Input.StatusNote" label="Stand" rows="2" full="true" hint="Die Kurzfassung des Projektowners: wo steht das Projekt?" />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="@($"/Projects/Details?id={Model.Id}")" delete-url="@Url.Page("/Projects/Edit", "Delete", new { id = Model.Id })" delete-confirm="Dieses Projekt löschen? Die Todos bleiben als eigenständige Todos erhalten." />
+    }
+    else
+    {
+        <np-buttons back-href="/Projects" />
+    }
+</form>

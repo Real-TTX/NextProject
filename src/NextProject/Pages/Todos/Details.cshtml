@@ -1,0 +1,280 @@
+@page
+@model NextProject.Pages.Todos.DetailsModel
+@{
+    var t = Model.Todo;
+    var today = Model.Today;
+    var tab = (ViewData["Tab"] as string) ?? Request.Query["tab"].ToString();
+    var from = $"/Todos/Details?id={t.Id}";
+    var canBlock = t.Status is TodoStatus.Open or TodoStatus.InProgress or TodoStatus.InReview;
+}
+
+<div class="np-head">
+    <a class="mat-btn mat-btn--ghost mat-btn--icon" href="/Todos" aria-label="Zurück zu den Todos" data-tip="Zurück">@Ui.Icon("back")</a>
+    <div class="np-head__text">
+        <h1>@t.Title</h1>
+        <p class="mat-page__sub">
+            @if (t.Project is not null) { <a href="/Projects/Details?id=@t.Project.Id">@t.Project.Name</a> }
+            @if (Model.Goal is not null) { <span>@(t.Project is not null ? " · " : "")Ziel: <a href="/Goals/Details?id=@(t.GoalId ?? t.KeyResult?.GoalId)">@Model.Goal</a></span> }
+            @if (t.Project is null && Model.Goal is null) { <span>Eine eigenständige Aufgabe</span> }
+        </p>
+    </div>
+</div>
+
+<np-summary title="Das hat nicht geklappt." />
+
+<div class="mat-grid mat-grid--4">
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Status</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(t.Status)</span><span class="mat-stat__delta">@Labels.Meaning(t.Status)</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Verantwortlich</span><span class="mat-stat__value np-stat-pill">@Ui.Person(t.OwnerUser?.DisplayName)</span><span class="mat-stat__delta">@(t.Contributors.Count == 0 ? "ohne Mitwirkende" : "mit " + Ui.Plural(t.Contributors.Count, "Mitwirkendem", "Mitwirkenden"))</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Fällig</span><span class="mat-stat__value np-stat-pill">@Ui.DueText(t.DueDate, today, Model.IsOverdue)</span><span class="mat-stat__delta">@(t.DueDate is null ? "ohne Termin" : Model.IsOverdue ? "überfällig, seit " + Fmt.Date(t.DueDate) : Fmt.Date(t.DueDate))</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Priorität</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(t.Priority)</span><span class="mat-stat__delta">@(t.CompletedDate is { } done ? "erledigt am " + Fmt.Moment(done) : "angelegt " + Fmt.Date(t.CreateDate))</span></div></div>
+</div>
+
+@if (t.Status == TodoStatus.Blocked)
+{
+    <div class="mat-alert mat-alert--warning" role="status">
+        @Ui.Icon("lock")
+        <div class="mat-alert__body">
+            <strong>Blockiert: @t.BlockReason</strong>
+            @if (!string.IsNullOrEmpty(t.BlockNeeds)) { <p>Gebraucht wird: @t.BlockNeeds</p> }
+        </div>
+    </div>
+}
+
+@if (Model.WaitsFor.Any(w => !w.IsClosed))
+{
+    <div class="mat-alert mat-alert--info" role="status">
+        @Ui.Icon("link")
+        <div class="mat-alert__body"><strong>Wartet noch auf:</strong> @string.Join(", ", Model.WaitsFor.Where(w => !w.IsClosed).Select(w => w.Title))</div>
+    </div>
+}
+
+<form method="post" class="mat-form">
+    <div class="mat-btn-row">
+        @switch (t.Status)
+        {
+            case TodoStatus.Open:
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.InProgress)" class="mat-btn mat-btn--primary">@Ui.Icon("play")<span>Starten</span></button>
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.Done)" class="mat-btn mat-btn--secondary">@Ui.Icon("check")<span>Erledigen</span></button>
+                break;
+            case TodoStatus.InProgress:
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.Done)" class="mat-btn mat-btn--primary">@Ui.Icon("check")<span>Erledigen</span></button>
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.InReview)" class="mat-btn mat-btn--secondary">@Ui.Icon("eye")<span>Zur Prüfung</span></button>
+                break;
+            case TodoStatus.InReview:
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.Done)" class="mat-btn mat-btn--primary">@Ui.Icon("check")<span>Freigeben und abschließen</span></button>
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.InProgress)" class="mat-btn mat-btn--secondary">@Ui.Icon("undo")<span>Zur Nachbearbeitung zurück</span></button>
+                break;
+            case TodoStatus.Blocked:
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.InProgress)" class="mat-btn mat-btn--primary">@Ui.Icon("lock-open")<span>Blockade aufheben</span></button>
+                break;
+            default:
+                <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.Open)" class="mat-btn mat-btn--primary">@Ui.Icon("refresh")<span>Wieder öffnen</span></button>
+                break;
+        }
+        <a class="mat-btn mat-btn--secondary" href="/Todos/Edit?id=@t.Id">@Ui.Icon("edit")<span>Bearbeiten</span></a>
+        @if (t.Status is not (TodoStatus.Done or TodoStatus.Discarded))
+        {
+            <span class="mat-btn-row__spacer"></span>
+            <button type="submit" asp-page-handler="Status" asp-route-id="@t.Id" name="to" value="@nameof(TodoStatus.Discarded)" class="mat-btn mat-btn--danger" data-confirm="Dieses Todo verwerfen? Es bleibt in der Historie, wird aber nicht mehr gebraucht." data-confirm-ok="Verwerfen">@Ui.Icon("x-circle")<span>Verwerfen</span></button>
+        }
+    </div>
+</form>
+
+@if (canBlock)
+{
+    <details class="np-fold">
+        <summary>@Ui.Icon("lock")<span>Blockiert? Hindernis festhalten</span></summary>
+        <form method="post" class="mat-form" asp-page-handler="Block" asp-route-id="@t.Id" novalidate>
+            <div class="mat-form__grid">
+                <div class="mat-field mat-field--full"><label class="mat-label" for="block-reason">Was blockiert die Aufgabe? <span class="mat-req" aria-hidden="true">*</span></label><textarea class="mat-textarea" id="block-reason" name="reason" rows="2" required data-msg-required="Bitte beschreibe das Hindernis."></textarea><span class="mat-error" aria-live="polite"></span></div>
+                <div class="mat-field mat-field--full"><label class="mat-label" for="block-needs">Was wird zum Weitermachen gebraucht?</label><textarea class="mat-textarea" id="block-needs" name="needs" rows="2"></textarea><span class="mat-hint">Eine Entscheidung, Hilfe, Material: so sieht die Leitung, was zu tun ist.</span></div>
+            </div>
+            <div class="mat-btn-row"><button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("lock")<span>Als blockiert markieren</span></button></div>
+        </form>
+    </details>
+}
+
+<div class="mat-cols">
+    <div class="mat-col-12 mat-col-lg-8 mat-stack">
+        @if (!string.IsNullOrWhiteSpace(t.Description))
+        {
+            <np-card title="Beschreibung" icon="file-text"><p class="np-prewrap">@t.Description</p></np-card>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(t.Result))
+        {
+            <np-card title="Ergebnis" icon="check-circle"><p class="np-prewrap">@t.Result</p></np-card>
+        }
+
+        <np-tabs id="todo-tabs" label="Zum Todo" selected="@tab">
+            <np-tab id="comments" title="Kommentare" icon="message-square" count="@t.Comments.Count">
+                @if (t.Comments.Count == 0)
+                {
+                    <p class="mat-muted">Noch keine Kommentare. Halte hier Zwischenstände und Absprachen fest.</p>
+                }
+                else
+                {
+                    <ul class="np-comments">
+                        @foreach (var c in t.Comments.OrderBy(c => c.CreateDate))
+                        {
+                            <li class="np-comment">
+                                @Ui.Avatar(c.CreateUser?.DisplayName, "sm")
+                                <div class="np-comment__body">
+                                    <div class="np-comment__head"><strong>@(c.CreateUser?.DisplayName ?? "Gelöschter Benutzer")</strong> <span class="mat-muted">@Fmt.Moment(c.CreateDate)</span></div>
+                                    <p class="np-prewrap">@c.Text</p>
+                                </div>
+                                @if (c.CreateUserId == Model.CurrentUserId || Model.IsAdmin)
+                                {
+                                    <form method="post" asp-page-handler="DeleteComment" asp-route-id="@t.Id" asp-route-commentId="@c.Id"><button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="Kommentar löschen" data-confirm="Diesen Kommentar löschen?" data-confirm-ok="Löschen">@Ui.Icon("trash")</button></form>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <form method="post" class="mat-form np-addform" asp-page-handler="Comment" asp-route-id="@t.Id" novalidate>
+                    <div class="mat-field"><label class="mat-label" for="comment-text">Neuer Kommentar</label><textarea class="mat-textarea" id="comment-text" name="text" rows="3" required data-msg-required="Bitte schreibe etwas."></textarea><span class="mat-error" aria-live="polite"></span></div>
+                    <div class="mat-btn-row"><button type="submit" class="mat-btn mat-btn--primary">@Ui.Icon("send")<span>Kommentieren</span></button></div>
+                </form>
+            </np-tab>
+
+            <np-tab id="check" title="Checkliste" icon="list-checks" count="@t.Checklist.Count">
+                @if (t.Checklist.Count == 0)
+                {
+                    <p class="mat-muted">Keine Teilschritte. Zerlege die Aufgabe, wenn sie aus mehreren Schritten besteht.</p>
+                }
+                else
+                {
+                    <p class="mat-muted">@Model.ChecklistDone von @t.Checklist.Count erledigt</p>
+                    <ul class="np-checklist">
+                        @foreach (var item in t.Checklist.OrderBy(c => c.SortOrder))
+                        {
+                            <li>
+                                <form method="post" asp-page-handler="ToggleCheck" asp-route-id="@t.Id" asp-route-itemId="@item.Id">
+                                    <button type="submit" class="np-checkbtn @(item.IsDone ? "is-done" : "")" aria-pressed="@(item.IsDone ? "true" : "false")">@Ui.Icon(item.IsDone ? "check-circle" : "circle")<span class="@(item.IsDone ? "np-done" : "")">@item.Text</span></button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <form method="post" class="mat-form np-addform" asp-page-handler="AddCheck" asp-route-id="@t.Id" novalidate>
+                    <div class="mat-field"><label class="mat-label" for="check-text">Neuer Teilschritt</label><input class="mat-input" id="check-text" name="text" autocomplete="off" /></div>
+                    <div class="mat-btn-row"><button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("plus")<span>Hinzufügen</span></button></div>
+                </form>
+            </np-tab>
+
+            <np-tab id="files" title="Anhänge" icon="paperclip" count="@t.Attachments.Count">
+                @if (t.Attachments.Count == 0)
+                {
+                    <p class="mat-muted">Keine Anhänge. Hänge eine Datei an oder verlinke ein Dokument.</p>
+                }
+                else
+                {
+                    <ul class="mat-listgroup mat-listgroup--flush">
+                        @foreach (var a in t.Attachments.OrderBy(a => a.CreateDate))
+                        {
+                            <li class="np-attachment">
+                                @if (a.Kind == AttachmentKind.Link)
+                                {
+                                    <a class="mat-listgroup__item" href="@a.Url" target="_blank" rel="noopener noreferrer">@Ui.Icon("link")<span class="mat-listgroup__text"><strong>@a.Title</strong><small>@a.Url</small></span></a>
+                                }
+                                else if (a.StoredFile is { } f)
+                                {
+                                    <a class="mat-listgroup__item" href="/Todos/Download?token=@f.Token">@Ui.Icon("file")<span class="mat-listgroup__text"><strong>@a.Title</strong><small>@Fmt.FileSize(f.SizeBytes) · @Fmt.Date(a.CreateDate)</small></span></a>
+                                }
+                                <form method="post" asp-page-handler="DeleteAttachment" asp-route-id="@t.Id" asp-route-attachmentId="@a.Id"><button type="submit" class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" aria-label="Anhang entfernen" data-confirm="Diesen Anhang entfernen?" data-confirm-ok="Entfernen">@Ui.Icon("trash")</button></form>
+                            </li>
+                        }
+                    </ul>
+                }
+
+                <div class="mat-grid mat-grid--2 np-addform">
+                    <form method="post" class="mat-form" asp-page-handler="Link" asp-route-id="@t.Id" novalidate>
+                        <div class="mat-field"><label class="mat-label" for="link-url">Link</label><input class="mat-input" id="link-url" name="url" type="url" placeholder="https://" required data-msg-required="Bitte gib die Adresse ein." /><span class="mat-error" aria-live="polite"></span></div>
+                        <div class="mat-field"><label class="mat-label" for="link-title">Bezeichnung</label><input class="mat-input" id="link-title" name="title" /></div>
+                        <div class="mat-btn-row"><button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("link")<span>Link anhängen</span></button></div>
+                    </form>
+                    <form method="post" class="mat-form" enctype="multipart/form-data" asp-page-handler="Upload" asp-route-id="@t.Id" novalidate>
+                        <div class="mat-field"><label class="mat-label" for="file-upload">Datei (bis @Fmt.FileSize(NextProject.Pages.Todos.DetailsModel.MaxUploadBytes))</label><input class="mat-input" id="file-upload" name="file" type="file" required data-msg-required="Bitte wähle eine Datei aus." /><span class="mat-error" aria-live="polite"></span></div>
+                        <div class="mat-btn-row"><button type="submit" class="mat-btn mat-btn--secondary">@Ui.Icon("upload")<span>Hochladen</span></button></div>
+                    </form>
+                </div>
+            </np-tab>
+
+            <np-tab id="history" title="Aktivität" icon="history" count="@Model.History.Count">
+                @if (Model.History.Count == 0)
+                {
+                    <p class="mat-muted">Noch nichts passiert.</p>
+                }
+                else
+                {
+                    <ul class="np-timeline">
+                        @foreach (var h in Model.History)
+                        {
+                            <li class="np-timeline__item">
+                                <span class="np-timeline__icon">@Ui.Icon(Labels.Icon(h.Kind))</span>
+                                <div>
+                                    <div><strong>@(h.UserName ?? "System")</strong> · @HistoryService.Describe(h)</div>
+                                    @if (!string.IsNullOrEmpty(h.Note) && h.Kind != HistoryKind.Created) { <div class="mat-muted">@h.Note</div> }
+                                    <small class="mat-muted">@Fmt.Moment(h.OccurredDate)</small>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </np-tab>
+        </np-tabs>
+    </div>
+
+    <div class="mat-col-12 mat-col-lg-4 mat-stack">
+        <np-card title="Zuordnung" icon="target">
+            <dl class="mat-kv">
+                <dt>Projekt</dt><dd>@if (t.Project is not null) { <a href="/Projects/Details?id=@t.Project.Id">@t.Project.Name</a> } else { <span class="mat-muted">keins</span> }</dd>
+                <dt>Ziel</dt><dd>@if (Model.Goal is not null) { <a href="/Goals/Details?id=@(t.GoalId ?? t.KeyResult?.GoalId)">@Model.Goal</a> } else { <span class="mat-muted">keins</span> }</dd>
+                <dt>Schlüsselergebnis</dt><dd>@(t.KeyResult?.Title ?? "keins")</dd>
+                <dt>Meilenstein</dt><dd>@(t.Milestone?.Title ?? "keiner")</dd>
+                <dt>Zeitraum</dt><dd>@(Fmt.Period(t.StartDate, t.DueDate) is { Length: > 0 } period ? period : "ohne Termine")</dd>
+            </dl>
+        </np-card>
+
+        <np-card title="Beteiligte" icon="users">
+            <dl class="mat-kv">
+                <dt>Verantwortlich</dt><dd>@Ui.Person(t.OwnerUser?.DisplayName)</dd>
+                <dt>Mitwirkende</dt><dd>@if (t.Contributors.Count == 0) { <span class="mat-muted">keine</span> } else { @Ui.AvatarStack(t.Contributors.Select(c => c.User!.DisplayName), 6) }</dd>
+                @if (t.ReviewerUser is not null) { <dt>Prüfer</dt><dd>@Ui.Person(t.ReviewerUser.DisplayName)</dd> }
+            </dl>
+        </np-card>
+
+        <np-card title="Abhängigkeiten" icon="link">
+            @if (Model.WaitsFor.Count == 0 && Model.BlockedByThis.Count == 0)
+            {
+                <p class="mat-muted">Diese Aufgabe hängt von keiner anderen ab, und keine andere wartet auf sie.</p>
+            }
+            else
+            {
+                @if (Model.WaitsFor.Count > 0)
+                {
+                    <p class="mat-muted">Wartet auf</p>
+                    <ul class="np-deps">
+                        @foreach (var w in Model.WaitsFor)
+                        {
+                            <li>@Ui.Icon(w.IsClosed ? "check-circle" : "circle")<a href="/Todos/Details?id=@w.Id" class="@(w.IsClosed ? "np-done" : "")">@w.Title</a></li>
+                        }
+                    </ul>
+                }
+
+                @if (Model.BlockedByThis.Count > 0)
+                {
+                    <p class="mat-muted">Darauf warten</p>
+                    <ul class="np-deps">
+                        @foreach (var w in Model.BlockedByThis)
+                        {
+                            <li>@Ui.Icon("arrow-right")<a href="/Todos/Details?id=@w.Id">@w.Title</a></li>
+                        }
+                    </ul>
+                }
+            }
+        </np-card>
+    </div>
+</div>

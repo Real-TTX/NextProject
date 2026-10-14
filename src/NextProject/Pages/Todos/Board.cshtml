@@ -1,0 +1,11 @@
+@page
+@model NextProject.Pages.Todos.BoardModel
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+    <partial name="_Board" model="Model.Board" />
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Todos/Edit?returnUrl=/Todos/Board">@Ui.Icon("plus")<span>Neues Todo</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Todos">@Ui.Icon("list")<span>Liste</span></a>
+    </div>
+</div>

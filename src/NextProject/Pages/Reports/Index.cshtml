@@ -1,0 +1,58 @@
+@page
+@model NextProject.Pages.Reports.IndexModel
+
+<div class="mat-grid mat-grid--4">
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Aktive Ziele</span><span class="mat-stat__value">@Model.ActiveGoals</span><span class="mat-stat__delta">@(Model.AverageAttainment is { } a ? "im Mittel " + Fmt.Percent(a) + " erreicht" : "noch nicht gemessen")</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projekte in Umsetzung</span><span class="mat-stat__value">@Model.ProjectsRunning</span><span class="mat-stat__delta @(Model.ProjectsAtRisk > 0 ? "mat-stat__delta--down" : "")">@(Model.ProjectsAtRisk > 0 ? Model.ProjectsAtRisk + " gefährdet" : "keins gefährdet")</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Offene Todos</span><span class="mat-stat__value">@Model.Todos.Pending</span><span class="mat-stat__delta @(Model.Todos.Overdue > 0 ? "mat-stat__delta--down" : "")">@(Model.Todos.Overdue > 0 ? Model.Todos.Overdue + " überfällig" : "nichts überfällig")</span></div></div>
+    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Blockiert</span><span class="mat-stat__value">@Model.Todos.Blocked</span><span class="mat-stat__delta">@(Model.Todos.InReview) in Prüfung</span></div></div>
+</div>
+
+<np-card title="Strategische Umsetzung" icon="target" sub="Ziele und die Projekte, die auf sie einzahlen">
+    <partial name="_Table" model="Model.StrategyTable" />
+    <p class="mat-hint">„Ziel erreicht“ ist der Durchschnitt der Schlüsselergebnisse. „Todos erledigt“ ist die Arbeit dahinter. Beide Spalten stehen nebeneinander, weil erledigte Arbeit nicht bedeutet, dass das Ziel erreicht ist.</p>
+</np-card>
+
+@if (Model.Endangered.Count > 0)
+{
+    <np-card title="Worauf die Software hinweist" icon="alert" sub="Projekte mit Terminen oder Blockaden, die auffallen">
+        <ul class="mat-listgroup mat-listgroup--flush">
+            @foreach (var e in Model.Endangered)
+            {
+                <li>
+                    <a class="mat-listgroup__item" href="/Projects/Details?id=@e.Project.Id">
+                        @Ui.Icon("alert")
+                        <span class="mat-listgroup__text"><strong>@e.Project.Name</strong><small>@string.Join(" · ", e.Facts.Signals.Select(s => s.Text))</small></span>
+                        @Labels.Pill(e.Project.Status)
+                    </a>
+                </li>
+            }
+        </ul>
+    </np-card>
+}
+
+@if (Model.BlockedTodos.Count > 0)
+{
+    <np-card title="Blockierte Todos" icon="lock" sub="Wer braucht welche Unterstützung?">
+        <ul class="mat-listgroup mat-listgroup--flush">
+            @foreach (var t in Model.BlockedTodos)
+            {
+                <li><a class="mat-listgroup__item" href="/Todos/Details?id=@t.Id">@Ui.Icon("lock")<span class="mat-listgroup__text"><strong>@t.Title</strong><small>@t.OwnerUser?.DisplayName@(t.Project is not null ? " · " + t.Project.Name : "") · @t.BlockReason@(t.BlockNeeds is { Length: > 0 } ? " · Gebraucht: " + t.BlockNeeds : "")</small></span></a></li>
+            }
+        </ul>
+    </np-card>
+}
+
+<div class="mat-grid mat-grid--2">
+    <np-card title="Projekte nach Status" icon="folder">@Model.ProjectChart</np-card>
+    <np-card title="Offene Todos je Verantwortlichem" icon="users">@Model.OwnerChart</np-card>
+</div>
+
+<np-card title="Daten für die Tabellenkalkulation" icon="download">
+    <p class="mat-muted">Als CSV mit Semikolon, so öffnet es sich in Excel direkt.</p>
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--secondary" href="/Reports?handler=Csv&kind=goals">@Ui.Icon("download")<span>Ziele und Schlüsselergebnisse</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Reports?handler=Csv&kind=projects">@Ui.Icon("download")<span>Projekte</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Reports?handler=Csv&kind=todos">@Ui.Icon("download")<span>Todos</span></a>
+    </div>
+</np-card>

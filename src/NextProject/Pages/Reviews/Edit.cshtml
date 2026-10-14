@@ -1,0 +1,40 @@
+@page
+@model NextProject.Pages.Reviews.EditModel
+@{
+    var kinds = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> { new("Projekt", "projekt"), new("Ziel", "ziel") };
+    var health = Controls.Options.Of<ReviewHealth>(Labels.Of);
+}
+
+<form class="mat-form" method="post" novalidate>
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <np-summary />
+
+    <np-card title="Worauf schaut das Review?" icon="history">
+        <div class="mat-form__grid">
+            <np-radios for="Input.Kind" label="Bezug" items="kinds" />
+            <np-select for="Input.ProjectId" label="Projekt" items="Model.Projects" empty="(Projekt wählen)" show-if="Input.Kind" show-value="projekt" required="true" />
+            <np-select for="Input.GoalId" label="Ziel" items="Model.Goals" empty="(Ziel wählen)" show-if="Input.Kind" show-value="ziel" required="true" />
+            <np-input for="Input.ReviewDate" label="Datum" type="date" required="true" />
+            <np-radios for="Input.Health" label="Einschätzung" items="health" />
+        </div>
+    </np-card>
+
+    <np-card title="Die vier Fragen" icon="message-square">
+        <div class="mat-form__grid">
+            <np-textarea for="Input.Deviation" label="Umsetzung gegen Strategie: Wo liegt die Ursache von Abweichungen?" rows="3" full="true" />
+            <np-textarea for="Input.Learnings" label="Lernschleifen: Was lernen wir aus der Umsetzung?" rows="3" full="true" />
+            <np-textarea for="Input.Adjustments" label="Nachschärfung: Wo müssen wir justieren?" rows="3" full="true" />
+            <np-textarea for="Input.Steering" label="Strategische Steuerung: Wie bleibt die Strategie lebendig?" rows="3" full="true" />
+            <np-input for="Input.NextReviewDate" label="Nächstes Review" type="date" clearable="true" />
+        </div>
+    </np-card>
+
+    @if (Model.Id is not null)
+    {
+        <np-buttons back-href="/Reviews" delete-url="@Url.Page("/Reviews/Edit", "Delete", new { id = Model.Id })" delete-confirm="Dieses Review löschen?" />
+    }
+    else
+    {
+        <np-buttons back-href="/Reviews" />
+    }
+</form>
