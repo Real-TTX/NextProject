@@ -320,6 +320,7 @@ a.np-kpi:hover { box-shadow: var(--np-shadow-lift); border-color: var(--tone); t
 .np-gantt__today { position: absolute; z-index: 3; top: 0; bottom: 0; width: 0; left: calc(var(--np-label) + (100% - var(--np-label)) * var(--np-left-n, 0)); border-left: 2px dashed var(--mat-accent); pointer-events: none; }
 .np-gantt__today span { position: absolute; top: 2px; left: 4px; padding: 1px 6px; border-radius: 6px; background: var(--mat-accent); color: var(--mat-on-accent); font-size: .68rem; font-weight: 800; }
 @media (max-width: 899px) { .np-gantt { --np-label: 11rem; } }
+@media (max-width: 599px) { .np-gantt { --np-label: 8.5rem; } .np-gantt__label { padding-inline: var(--mat-space-2); gap: var(--mat-space-1); } }
 
 /* tighter tiles: four of them fit next to the menu, and a person's name does not break */
 .np-kpi { padding: var(--mat-space-4); gap: var(--mat-space-3); }

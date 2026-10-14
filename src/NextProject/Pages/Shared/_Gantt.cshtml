@@ -46,7 +46,7 @@
                             <span class="np-gantt__toggle np-gantt__toggle--none" aria-hidden="true"></span>
                         }
 
-                        <a class="np-gantt__name" href="@row.Href"><strong>@row.Label</strong>@if (!string.IsNullOrEmpty(row.Sub)) { <small>@row.Sub</small> }</a>
+                        <a class="np-gantt__name" href="@row.Href"><strong>@row.Label</strong>@if (!string.IsNullOrEmpty(row.Sub)) { <small>@row.Sub</small> }@if (row.Level == 0 && row.Bar is { } span) { <small>@span.Dates</small> }</a>
                     </div>
                     <div class="np-gantt__track">
                         @foreach (var mark in row.Marks)
@@ -62,7 +62,6 @@
                                     <span class="np-gantt__fill" data-np-bar="0,@GanttView.Css(progress)"></span>
                                 }
 
-                                @if (row.Level == 0) { <span class="np-gantt__barlabel">@bar.Dates</span> }
                             </span>
                         }
                     </div>
