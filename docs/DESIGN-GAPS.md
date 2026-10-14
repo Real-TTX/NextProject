@@ -21,7 +21,8 @@ tabs, dialogs, pickers, toasts and the schedule. This file lists what to look at
 
 ### 1. Dark menu (`.mat-nav` token override)
 The menu sets its own surface and text tokens inside `.mat-nav` (dark burgundy `#1d0a10`, white text, the active item in the accent colour with a glow). Menu behaviour, badges,
-submenus and the switcher stay MatUi. *Proposal:* a `data-nav="dark"` variant of the shell, with the contrast checks for the tokens it sets (`COLOR-09` style).
+submenus and the switcher stay MatUi. The count badge (`mat-nav__badge`) is a filled amber chip, white with a dark number on the active item: the tinted toolkit badge disappeared on the
+dark menu and on the cherry item. *Proposal:* a `data-nav="dark"` variant of the shell, with the contrast checks for the tokens it sets (`COLOR-09` style).
 
 ### 2. Panel (`np-panel`, tag helper `np-card`)
 A card with a head: a round tinted icon, a bold title, a quiet line at the right end. Replaces `mat-card` + `mat-card__head`. *Proposal:* a "Panel" in the catalogue.

@@ -357,3 +357,8 @@ a.np-kpi:hover { box-shadow: var(--np-shadow-lift); border-color: var(--tone); t
 .np-tl__dates { font-weight: 600; }
 /* a chip inside a heading must not take over its tight letters */
 .np-chip { letter-spacing: 0; word-spacing: normal; }
+
+/* counts in the menu: a filled chip that reads on the dark menu, and white on the active (cherry) item */
+.mat-nav__badge { background: var(--np-c-warn); color: var(--np-c-warn-text); font-weight: 800; }
+.mat-nav__badge--danger, .mat-nav__badge--error { background: var(--np-c-error); color: #ffffff; }
+.mat-nav__item.is-active .mat-nav__badge, .mat-nav__item[aria-current="page"] .mat-nav__badge { background: #ffffff; color: var(--np-c-error); }
