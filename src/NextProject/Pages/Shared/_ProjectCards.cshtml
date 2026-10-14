@@ -1,0 +1,51 @@
+@model ProjectCards
+@*
+    The projects as cards: a picture of the state (the colour of the tile), the two numbers side by side (finished todos, reached goals), and what to look at.
+    The whole card is the link (the name stretches over it).
+*@
+<div class="np-cards">
+    @foreach (var card in Model.Items)
+    {
+        var p = card.Project;
+        var f = card.Facts;
+        var todos = f?.Todos;
+        var counted = todos is null ? 0 : todos.Total - todos.Discarded;
+        var late = p.EndDate is { } end && end < Model.Today && !p.IsClosed;
+        <article class="np-pcard np-pcard--@card.Tone">
+            <div class="np-pcard__top">
+                <span class="np-pcard__tile">@Ui.Icon(p.Status == ProjectStatus.Completed ? "check-circle" : p.Status == ProjectStatus.AtRisk ? "alert" : "folder")</span>
+                <span class="np-pcard__chip">@Labels.Pill(p.Status)</span>
+            </div>
+            <div>
+                <h3 class="np-pcard__name"><a href="/Projects/Details?id=@p.Id">@p.Name</a></h3>
+                @if (p.Goals.Count > 0)
+                {
+                    <p class="np-pcard__goal">Ziel: @string.Join(", ", p.Goals.Where(g => g.Goal is not null).Select(g => g.Goal!.Title))</p>
+                }
+            </div>
+
+            <div class="np-pcard__bar">
+                <div class="np-pcard__barlabel"><span>Todos erledigt</span><span>@(todos is not null && counted > 0 ? todos.Done + " von " + counted : "keine Todos")</span></div>
+                @Ui.Meter(counted > 0 ? todos!.Completion : null, "Anteil der erledigten Todos")
+            </div>
+            <div class="np-pcard__bar">
+                <div class="np-pcard__barlabel"><span>Ziel erreicht</span><span>@(f is { KeyResults: > 0 } ? Ui.Plural(f.KeyResults, "Schlüsselergebnis", "Schlüsselergebnisse") : "nicht gemessen")</span></div>
+                @Ui.Meter(f?.Attainment, "Erreichung der Schlüsselergebnisse", "ok")
+            </div>
+
+            <div class="np-pcard__facts">
+                <div class="np-pcard__fact"><strong class="@(late ? "np-overdue" : "")">@(p.EndDate is null ? "–" : Fmt.Date(p.EndDate))</strong><span>Projektende</span></div>
+                <div class="np-pcard__fact"><strong>@(f is null ? "–" : f.MilestonesReached + "/" + f.Milestones)</strong><span>Meilensteine</span></div>
+                <div class="np-pcard__fact"><strong>@(p.Budget is { } budget ? Fmt.Money(budget).Replace(",00", "") : "–")</strong><span>Kostenaufwand</span></div>
+            </div>
+
+            <div class="np-pcard__foot">
+                @Ui.Person(p.OwnerUser?.DisplayName)
+                @if (f is { Signals.Count: > 0 } && !p.IsClosed)
+                {
+                    <span class="np-pcard__warn">@Ui.Icon("alert")@Ui.Plural(f.Signals.Count, "Hinweis", "Hinweise")</span>
+                }
+            </div>
+        </article>
+    }
+</div>

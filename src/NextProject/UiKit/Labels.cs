@@ -49,6 +49,16 @@ public static class Labels
         _ => "Die Aufgabe wird nicht mehr benötigt.",
     };
 
+    /// <summary>The colour of a status as a tile: the same story as the chip (in progress blue, blocked red, in review purple, done green).</summary>
+    public static string KpiTone(TodoStatus s) => s switch
+    {
+        TodoStatus.InProgress => "busy",
+        TodoStatus.Blocked => "error",
+        TodoStatus.InReview => "info",
+        TodoStatus.Done => "ok",
+        _ => "plain",
+    };
+
     public static string Of(Level l) => l switch
     {
         Level.Low => "Niedrig",

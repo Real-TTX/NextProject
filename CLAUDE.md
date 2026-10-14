@@ -45,6 +45,12 @@ source into the container, without `bin` and `obj`). Remember `MSYS_NO_PATHCONV=
   (hidden fields are disabled and not posted: do not let a default overwrite stored values; `Todos/Edit` reads `Input.Result` only when it was posted). No inline scripts or styles (CSP
   `default-src 'self'`): a value that is data (a position, a bar) is a `data-*` attribute that `app.js` turns into a custom property. Icons from the sprite (`Ui.Icon`); a name that is not in the
   sprite draws nothing, `IconTests` checks every name.
+- **Look**: the customer wants it *plakativ* (bold): dark menu, filled chips, big KPI tiles, cards, coloured board heads. Draw these as own components in `wwwroot/css/np-ui.css` (`np-*`) and use MatUi
+  only for the basics (shell, forms, buttons, tables, tabs, dialogs, pickers, the schedule). What MatDesign lacks goes into `docs/DESIGN-GAPS.md` (add to it when you draw something new).
+  Status is `Labels.Pill` (filled `np-chip`), numbers are `Ui.Kpi`, `Ui.Ring`, `Ui.Meter`.
+- **Calendar**: `CalendarService` builds the items (filters in `CalendarFilter`), `Calendar/Index` is the MatUi schedule (`calendar.js` adds the dialog and drag and drop, `POST /api/todos/{id}/due`
+  through `TodoService.MoveAsync`), `Calendar/Plan` is the Gantt view (`GanttView`, `_Gantt`, `gantt.js`), `Calendar/Workload` counts open todos per person and week. The iCal feed is
+  `/cal/{token}.ics` (anonymous, the token is `User.CalendarToken`, `IcsWriter` writes the file). Bar positions are `data-np-bar` values that `app.js` turns into custom properties.
 - **Cherry red** is the accent (`[data-app="nextproject"] { --mat-app-accent: #c8102e }` in `app.css`). It looks like the danger colour: never let colour be the only sign (status pills carry words and icons).
 - **Formatting**: the request culture is **invariant on purpose**; format numbers and dates with `Fmt` (de-DE), never with `ToString()` in text a person reads
 - **Razor** encodes `ü` as an entity: tests compare with `AppFixture.TextAsync` (decoded)

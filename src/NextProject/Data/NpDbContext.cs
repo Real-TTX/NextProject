@@ -103,6 +103,7 @@ public class NpDbContext(DbContextOptions<NpDbContext> options, ICurrentUser cur
         b.Entity<User>(e =>
         {
             e.HasIndex(x => x.Email).IsUnique().HasFilter("\"UpdateState\" <> 0");
+            e.HasIndex(x => x.CalendarToken).IsUnique();
             e.HasOne(x => x.Totp).WithOne(x => x.User).HasForeignKey<UserTotp>(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.SetNull);
         });

@@ -13,11 +13,11 @@
     </div>
 </div>
 
-<div class="mat-grid mat-grid--4">
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(f.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(f.KeyResults == 0 ? "noch nicht gemessen: Schlüsselergebnis fehlt" : "Durchschnitt der Schlüsselergebnisse")</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Schlüsselergebnisse</span><span class="mat-stat__value">@f.KeyResultsReached/@f.KeyResults</span><span class="mat-stat__delta">erreicht</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projekte</span><span class="mat-stat__value">@f.Projects</span><span class="mat-stat__delta">zahlen auf das Ziel ein</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Todos erledigt</span><span class="mat-stat__value">@Fmt.Percent(f.Todos.Completion)</span><span class="mat-stat__delta">@f.Todos.Done von @(f.Todos.Total - f.Todos.Discarded) · die Arbeit dahinter</span></div></div>
+<div class="np-kpis">
+    @Ui.Kpi("Ziel erreicht", f.Attainment is { } a ? Fmt.Percent(a) : "–", f.KeyResults == 0 ? "noch nicht gemessen: Schlüsselergebnis fehlt" : "Durchschnitt der Schlüsselergebnisse", "target", "ok")
+    @Ui.Kpi("Schlüsselergebnisse", f.KeyResultsReached + "/" + f.KeyResults, "erreicht", "trending-up", "info")
+    @Ui.Kpi("Projekte", f.Projects.ToString(), "zahlen auf das Ziel ein", "folder", "busy")
+    @Ui.Kpi("Todos erledigt", Fmt.Percent(f.Todos.Completion), f.Todos.Done + " von " + (f.Todos.Total - f.Todos.Discarded) + " · die Arbeit dahinter", "check-square", "accent")
 </div>
 
 <div class="mat-actions">
@@ -55,25 +55,28 @@
         }
         else
         {
-            <div class="mat-table-wrap">
-                <table class="mat-table" id="keyresult-table">
-                    <caption class="mat-sr-only">Schlüsselergebnisse</caption>
-                    <thead><tr><th scope="col">Schlüsselergebnis</th><th scope="col" class="mat-hide-sm">Verantwortlich</th><th scope="col" class="mat-num">Start</th><th scope="col" class="mat-num">Aktuell</th><th scope="col" class="mat-num">Ziel</th><th scope="col">Erreicht</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr></thead>
-                    <tbody>
-                        @foreach (var k in g.KeyResults.OrderBy(k => k.Title))
-                        {
-                            <tr>
-                                <td data-label="Schlüsselergebnis"><div class="np-name"><a href="/Goals/KeyResult?id=@k.Id">@k.Title</a><small class="mat-muted np-sub">@(k.Metric ?? "")@(k.Project is not null ? (k.Metric is null ? "" : " · ") + "Projekt: " + k.Project.Name : "")</small></div></td>
-                                <td data-label="Verantwortlich" class="mat-hide-sm">@Ui.Person(k.OwnerUser?.DisplayName)</td>
-                                <td data-label="Start" class="mat-num">@Fmt.Number(k.StartValue, 1) @k.Unit</td>
-                                <td data-label="Aktuell" class="mat-num">@Fmt.Number(k.CurrentValue, 1) @k.Unit</td>
-                                <td data-label="Ziel" class="mat-num">@Fmt.Number(k.TargetValue, 1) @k.Unit</td>
-                                <td data-label="Erreicht">@Ui.Meter(k.Attainment, "Erreichung")</td>
-                                <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Goals/CheckIn?keyResultId=@k.Id" aria-label="Messung eintragen" data-tip="Messung eintragen">@Ui.Icon("plus")</a><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Goals/KeyResult?id=@k.Id" aria-label="Bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="np-krcards">
+                @foreach (var k in g.KeyResults.OrderBy(k => k.Title))
+                {
+                    var tone = k.Attainment >= 1m ? "ok" : k.DueDate is { } kd && kd < Model.Today ? "error" : "busy";
+                    <article class="np-krcard">
+                        <h3><a href="/Goals/KeyResult?id=@k.Id">@k.Title</a></h3>
+                        <div class="np-scale">
+                            <div class="np-scale__top">
+                                <span class="np-scale__value">@Fmt.Number(k.CurrentValue, k.CurrentValue % 1 == 0 ? 0 : 1)</span>
+                                <span class="np-scale__unit">@(string.IsNullOrEmpty(k.Unit) ? "" : k.Unit)@(string.IsNullOrEmpty(k.Metric) ? "" : " · " + k.Metric)</span>
+                                @Ui.Pill(Fmt.Percent(k.Attainment) + " erreicht", tone)
+                            </div>
+                            @Ui.Meter(k.Attainment, "Erreichung", tone == "error" ? "error" : "ok")
+                            <div class="np-scale__marks"><span>Start @Fmt.Number(k.StartValue, k.StartValue % 1 == 0 ? 0 : 1)</span><span>Ziel @Fmt.Number(k.TargetValue, k.TargetValue % 1 == 0 ? 0 : 1)</span></div>
+                        </div>
+                        <div class="np-pcard__foot">
+                            @Ui.Person(k.OwnerUser?.DisplayName)
+                            <span class="mat-muted">@(k.Project is not null ? "Projekt: " + k.Project.Name : "")@(k.DueDate is { } due ? (k.Project is not null ? " · " : "") + "bis " + Fmt.Date(due) : "")</span>
+                        </div>
+                        <div class="np-krcard__actions"><a class="mat-btn mat-btn--secondary mat-btn--sm" href="/Goals/CheckIn?keyResultId=@k.Id">@Ui.Icon("plus")<span>Messung eintragen</span></a></div>
+                    </article>
+                }
             </div>
         }
 

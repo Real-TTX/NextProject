@@ -22,11 +22,11 @@
 
 <np-summary title="Das hat nicht geklappt." />
 
-<div class="mat-grid mat-grid--4">
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Status</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(t.Status)</span><span class="mat-stat__delta">@Labels.Meaning(t.Status)</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Verantwortlich</span><span class="mat-stat__value np-stat-pill">@Ui.Person(t.OwnerUser?.DisplayName)</span><span class="mat-stat__delta">@(t.Contributors.Count == 0 ? "ohne Mitwirkende" : "mit " + Ui.Plural(t.Contributors.Count, "Mitwirkendem", "Mitwirkenden"))</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Fällig</span><span class="mat-stat__value np-stat-pill">@Ui.DueText(t.DueDate, today, Model.IsOverdue)</span><span class="mat-stat__delta">@(t.DueDate is null ? "ohne Termin" : Model.IsOverdue ? "überfällig, seit " + Fmt.Date(t.DueDate) : Fmt.Date(t.DueDate))</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Priorität</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(t.Priority)</span><span class="mat-stat__delta">@(t.CompletedDate is { } done ? "erledigt am " + Fmt.Moment(done) : "angelegt " + Fmt.Date(t.CreateDate))</span></div></div>
+<div class="np-kpis">
+    @Ui.Kpi("Status", Labels.Pill(t.Status), Labels.Meaning(t.Status), Labels.Icon(t.Status), Labels.KpiTone(t.Status))
+    @Ui.Kpi("Verantwortlich", Ui.Person(t.OwnerUser?.DisplayName), t.Contributors.Count == 0 ? "ohne Mitwirkende" : "mit " + Ui.Plural(t.Contributors.Count, "Mitwirkendem", "Mitwirkenden"), "user", "busy")
+    @Ui.Kpi("Fällig", Ui.DueText(t.DueDate, today, Model.IsOverdue), t.DueDate is null ? "ohne Termin" : Model.IsOverdue ? "überfällig, seit " + Fmt.Date(t.DueDate) : Fmt.Date(t.DueDate), "calendar", Model.IsOverdue ? "error" : "info", bad: Model.IsOverdue)
+    @Ui.Kpi("Priorität", Labels.Pill(t.Priority), t.CompletedDate is { } done ? "erledigt am " + Fmt.Moment(done) : "angelegt " + Fmt.Date(t.CreateDate), "alert", t.Priority == Level.High ? "error" : t.Priority == Level.Medium ? "warn" : "plain")
 </div>
 
 @if (t.Status == TodoStatus.Blocked)

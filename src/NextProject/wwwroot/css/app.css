@@ -131,6 +131,7 @@
 .np-tl__mark--ok { background: var(--mat-success-text); }
 .np-tl__mark--error { background: var(--mat-danger-text); }
 .np-tl__mark--info { background: var(--mat-info-text); }
+.np-tl__mark--on { z-index: 1; box-shadow: 0 0 0 2px var(--mat-surface-2); }
 .np-tl__today { position: absolute; top: 0; bottom: 0; left: calc(14rem + var(--mat-space-3)); width: 0; pointer-events: none; }
 .np-tl__today::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; border-left: 2px dashed var(--mat-accent); }
 .np-tl__dates { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -169,3 +170,18 @@
 /* ---- A column beside the main content is narrow: label above the value ---- */
 .mat-col-lg-4 .mat-kv, .mat-col-lg-5 .mat-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .mat-col-lg-4 .mat-kv dd, .mat-col-lg-5 .mat-kv dd { margin-bottom: var(--mat-space-3); }
+
+/* ---- The calendar: legend, the day a card is dragged over, the workload table ---- */
+.np-legend { list-style: none; padding: 0; margin: 0 0 var(--mat-space-3); display: flex; flex-wrap: wrap; gap: var(--mat-space-2) var(--mat-space-4); align-items: center; font-size: var(--mat-fs-sm); color: var(--mat-text-muted); }
+.np-legend li { display: inline-flex; align-items: center; gap: var(--mat-space-2); }
+.np-cal-note { margin: var(--mat-space-2) 0; }
+.np-cal-actions { margin-bottom: var(--mat-space-3); }
+.np-cal-newhint { font-size: var(--mat-fs-sm); }
+.mat-schedule__cell.np-drop { background: var(--mat-accent-soft); outline: 2px dashed var(--mat-accent); outline-offset: -2px; }
+.np-load { display: inline-grid; place-items: center; min-width: 2.2rem; padding: 2px var(--mat-space-2); border-radius: var(--mat-radius-pill); font-variant-numeric: tabular-nums; font-weight: 600; text-decoration: none; color: var(--mat-text); background: var(--mat-surface-3); }
+a.np-load:hover { text-decoration: none; filter: brightness(.96); }
+.np-load--1 { background: var(--mat-info-bg); color: var(--mat-info-text); }
+.np-load--2 { background: var(--mat-warning-bg); color: var(--mat-warning-text); }
+.np-load--3, .np-load--over { background: var(--mat-danger-bg); color: var(--mat-danger-text); }
+.np-workload td, .np-workload th { vertical-align: middle; }
+.np-workload th small { display: block; font-weight: 400; }

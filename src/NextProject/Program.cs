@@ -1,5 +1,6 @@
 using System.Globalization;
 using NextProject.Configuration;
+using NextProject.Core.Planning;
 using NextProject.Data;
 using NextProject.Data.Entities;
 using NextProject.Services;
@@ -71,6 +72,7 @@ builder.Services.AddScoped<ShareService>();
 builder.Services.AddScoped<HistoryService>();
 builder.Services.AddScoped<PlanningService>();
 builder.Services.AddScoped<TodoService>();
+builder.Services.AddScoped<CalendarService>();
 builder.Services.AddScoped<Lookups>();
 builder.Services.AddScoped<BackupStoreFactory>();
 builder.Services.AddScoped<DatabaseArchive>();
@@ -216,6 +218,39 @@ app.MapPost("/api/todos/{id:long}/status", async (long id, HttpContext http, IAn
     var problem = await todos.ChangeStatusAsync(id, to, form["reason"], form["needs"]);
     return problem is null ? Results.Ok(new { status = to.ToString(), label = Labels.Of(to) }) : Results.BadRequest(new { error = problem });
 }).RequireAuthorization("SignedIn");
+
+// The calendar moves a todo: the date it was dropped on (or chosen in the dialog) becomes the due date; a start date moves with it.
+app.MapPost("/api/todos/{id:long}/due", async (long id, HttpContext http, IAntiforgery antiforgery, TodoService todos) =>
+{
+    await antiforgery.ValidateRequestAsync(http);
+    var form = await http.Request.ReadFormAsync();
+    if (!DateOnly.TryParseExact(form["due"], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var due))
+    {
+        return Results.BadRequest(new { error = "Das ist kein Datum." });
+    }
+
+    var (start, newDue, error) = await todos.MoveAsync(id, due);
+    return error is null
+        ? Results.Ok(new { start = start?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), due = newDue?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) })
+        : Results.BadRequest(new { error });
+}).RequireAuthorization("SignedIn");
+
+// The personal calendar subscription: the address holds a secret token (the user can make a new one); no sign-in, because a calendar program cannot.
+app.MapGet("/cal/{token:guid}.ics", async (Guid token, HttpContext http, NpDbContext db, CalendarService calendar, PublicUrl urls, TimeProvider clock) =>
+{
+    var user = await db.User.AsNoTracking().FirstOrDefaultAsync(u => u.CalendarToken == token && u.IsActive);
+    if (user is null)
+    {
+        return Results.NotFound();
+    }
+
+    var today = Fmt.Today(clock);
+    var items = await calendar.GetAsync(new CalendarFilter(user.Id), today.AddDays(-60), today.AddDays(365));
+    var events = items.Select(i => new IcsEvent(i.Id + "@nextproject", i.Title, i.Start, i.End, i.Description, urls.Absolute(i.Url), i.Note, i.Done));
+    var text = IcsWriter.Write("NextProject: " + user.DisplayName, events, clock.GetUtcNow().UtcDateTime);
+    http.Response.Headers.CacheControl = "no-store";
+    return Results.Text(text, "text/calendar", System.Text.Encoding.UTF8);
+}).AllowAnonymous();
 
 app.MapRazorPages();
 

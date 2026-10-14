@@ -44,11 +44,11 @@
 
         @if (Model.Project is { } p && Model.ProjectFacts is { } f)
         {
-            <div class="mat-grid mat-grid--4">
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Status</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(p.Status)</span><span class="mat-stat__delta">@Fmt.Period(p.StartDate, p.EndDate)</span></div></div>
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Todos erledigt</span><span class="mat-stat__value">@Fmt.Percent(f.Todos.Completion)</span><span class="mat-stat__delta">@f.Todos.Done von @(f.Todos.Total - f.Todos.Discarded)</span></div></div>
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(f.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(f.KeyResults == 0 ? "nicht gemessen" : Ui.Plural(f.KeyResults, "Schlüsselergebnis", "Schlüsselergebnisse"))</span></div></div>
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projektowner</span><span class="mat-stat__value np-stat-pill">@Ui.Person(p.OwnerUser?.DisplayName)</span><span class="mat-stat__delta">@(p.Department?.Name ?? "")</span></div></div>
+            <div class="np-kpis">
+                @Ui.Kpi("Status", Labels.Pill(p.Status), Fmt.Period(p.StartDate, p.EndDate), "folder", "busy")
+                @Ui.Kpi("Todos erledigt", Fmt.Percent(f.Todos.Completion), f.Todos.Done + " von " + (f.Todos.Total - f.Todos.Discarded), "check-square", "accent")
+                @Ui.Kpi("Ziel erreicht", f.Attainment is { } a ? Fmt.Percent(a) : "–", f.KeyResults == 0 ? "nicht gemessen" : Ui.Plural(f.KeyResults, "Schlüsselergebnis", "Schlüsselergebnisse"), "target", "ok")
+                @Ui.Kpi("Projektowner", Ui.Person(p.OwnerUser?.DisplayName), p.Department?.Name, "user", "info")
             </div>
 
             @if (f.Signals.Count > 0 && !p.IsClosed)
@@ -133,11 +133,11 @@
         }
         else if (Model.Goal is { } g && Model.GoalFacts is { } gf)
         {
-            <div class="mat-grid mat-grid--4">
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Status</span><span class="mat-stat__value np-stat-pill">@Labels.Pill(g.Status)</span><span class="mat-stat__delta">@g.Year@(g.Department is not null ? " · " + g.Department.Name : "")</span></div></div>
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(gf.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(gf.KeyResults == 0 ? "nicht gemessen" : "Durchschnitt der Schlüsselergebnisse")</span></div></div>
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Schlüsselergebnisse</span><span class="mat-stat__value">@gf.KeyResultsReached/@gf.KeyResults</span><span class="mat-stat__delta">erreicht</span></div></div>
-                <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projekte</span><span class="mat-stat__value">@gf.Projects</span><span class="mat-stat__delta">zahlen darauf ein</span></div></div>
+            <div class="np-kpis">
+                @Ui.Kpi("Status", Labels.Pill(g.Status), g.Year + (g.Department is not null ? " · " + g.Department.Name : ""), "target", "busy")
+                @Ui.Kpi("Ziel erreicht", gf.Attainment is { } a ? Fmt.Percent(a) : "–", gf.KeyResults == 0 ? "nicht gemessen" : "Durchschnitt der Schlüsselergebnisse", "trending-up", "ok")
+                @Ui.Kpi("Schlüsselergebnisse", gf.KeyResultsReached + "/" + gf.KeyResults, "erreicht", "list-checks", "info")
+                @Ui.Kpi("Projekte", gf.Projects.ToString(), "zahlen darauf ein", "folder", "busy")
             </div>
 
             <np-card title="Bedeutung und Zielwerte" icon="target">

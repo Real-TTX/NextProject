@@ -15,10 +15,17 @@ public sealed class IndexModel(NpDbContext db, Lookups lookups, PlanningService 
 
     public TableModel Table { get; private set; } = null!;
 
+    public GoalCards Cards { get; private set; } = null!;
+
+    public ViewToggle Toggle { get; private set; } = null!;
+
+    public string View { get; private set; } = "karten";
+
     public async Task OnGetAsync()
     {
         Head("Ziele & OKRs", "Was das Unternehmen erreichen will, und woran man es misst.", ("Ziele & OKRs", null));
         ViewData["ActiveHref"] = "/Goals";
+        View = Request.Query["ansicht"] == "liste" ? "liste" : "karten";
 
         var users = await lookups.UsersAsync();
         var departments = await lookups.DepartmentsAsync();
@@ -49,12 +56,16 @@ public sealed class IndexModel(NpDbContext db, Lookups lookups, PlanningService 
                 ["status"] = ("Status", (q, d) => d ? q.OrderByDescending(g => g.Status) : q.OrderBy(g => g.Status)),
             },
             DefaultSort = "year",
+            PageSize = 18,
+            Keep = new Dictionary<string, string?> { ["ansicht"] = View == "liste" ? "liste" : null },
         };
 
         var result = await ListBuilder.RunAsync(db.Goal.AsNoTracking().Include(g => g.OwnerUser).Include(g => g.Department), Request, spec, HttpContext.RequestAborted);
         Toolbar = result.Toolbar;
         Pager = result.Pager;
         var facts = await planning.GoalFactsAsync([.. result.Items.Select(g => g.Id)], HttpContext.RequestAborted);
+        Cards = new GoalCards([.. result.Items.Select(g => new GoalCard(g, facts.GetValueOrDefault(g.Id)))]);
+        Toggle = ViewToggle.For(View, Toolbar.UrlWithPage(1));
         Table = TableModel.Of("goal-table", "Ziele", result.Items,
         [
             (new TableColumn("Ziel"), g => Ui.NameWithSub(g.Title, $"/Goals/Details?id={g.Id}", g.YearTarget)),

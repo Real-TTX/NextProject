@@ -27,6 +27,13 @@
                     }
                     else
                     {
+                        @if (row.Marks is { Count: > 0 })
+                        {
+                            @foreach (var mark in row.Marks)
+                            {
+                                <span class="np-tl__mark np-tl__mark--@mark.Tone np-tl__mark--on" data-np-bar="@TimelineView.Css(mark.Left),0" role="img" aria-label="Meilenstein @mark.Label"></span>
+                            }
+                        }
                         <span class="np-tl__bar np-tl__bar--@row.Tone" data-np-bar="@TimelineView.Css(row.Left),@TimelineView.Css(row.Width)" role="img" aria-label="@row.Label, @row.Dates"></span>
                     }
                 </div>

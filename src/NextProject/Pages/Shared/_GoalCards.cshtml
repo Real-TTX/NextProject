@@ -1,0 +1,38 @@
+@model GoalCards
+@*
+    The goals as cards: a ring with how far the goal is reached (never "0 %" for a goal that is not measured), the key results and the work behind it.
+*@
+<div class="np-cards">
+    @foreach (var card in Model.Items)
+    {
+        var g = card.Goal;
+        var f = card.Facts;
+        var counted = f is null ? 0 : f.Todos.Total - f.Todos.Discarded;
+        <article class="np-pcard np-pcard--@card.Tone">
+            <div class="np-pcard__top">
+                <span class="np-pcard__tile">@Ui.Icon("target")</span>
+                <span class="np-pcard__chip">@Labels.Pill(g.Status)</span>
+            </div>
+            <div>
+                <h3 class="np-pcard__name"><a href="/Goals/Details?id=@g.Id">@g.Title</a></h3>
+                <p class="np-pcard__goal">@g.Year · @(g.Department?.Name ?? "ganzes Unternehmen")</p>
+            </div>
+
+            <div class="np-goalbody">
+                <span class="np-pcard__ring">@Ui.Ring(f?.Attainment, "Ziel erreicht", card.Tone == "plain" ? "accent" : card.Tone, large: true)</span>
+                <div class="np-goalbody__text">
+                    <strong class="np-goalbody__lead">@(f?.Attainment is { } a ? "Ziel zu " + Fmt.Percent(a) + " erreicht" : "Noch nicht gemessen")</strong>
+                    @if (!string.IsNullOrWhiteSpace(g.YearTarget)) { <p class="np-goalbody__target">@g.YearTarget</p> }
+                </div>
+            </div>
+
+            <div class="np-pcard__facts">
+                <div class="np-pcard__fact"><strong>@(f is null ? "–" : f.KeyResultsReached + "/" + f.KeyResults)</strong><span>Schlüsselergebnisse</span></div>
+                <div class="np-pcard__fact"><strong>@(f?.Projects ?? 0)</strong><span>Projekte</span></div>
+                <div class="np-pcard__fact"><strong>@(counted > 0 ? Fmt.Percent(f!.Todos.Completion) : "–")</strong><span>Todos erledigt</span></div>
+            </div>
+
+            <div class="np-pcard__foot">@Ui.Person(g.OwnerUser?.DisplayName)</div>
+        </article>
+    }
+</div>

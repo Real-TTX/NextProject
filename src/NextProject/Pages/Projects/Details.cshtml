@@ -31,11 +31,11 @@
     </div>
 }
 
-<div class="mat-grid mat-grid--4">
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Todos erledigt</span><span class="mat-stat__value">@Fmt.Percent(f.Todos.Completion)</span><span class="mat-stat__delta">@f.Todos.Done von @(f.Todos.Total - f.Todos.Discarded) · Indikator, nicht das Ziel</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziel erreicht</span><span class="mat-stat__value">@(f.Attainment is { } a ? Fmt.Percent(a) : "–")</span><span class="mat-stat__delta">@(f.KeyResults == 0 ? "kein Schlüsselergebnis gemessen" : $"nach {Ui.Plural(f.KeyResults, "Schlüsselergebnis", "Schlüsselergebnissen")}")</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Meilensteine</span><span class="mat-stat__value">@f.MilestonesReached/@f.Milestones</span><span class="mat-stat__delta @(f.MilestonesLate > 0 ? "mat-stat__delta--down" : "")">@(f.MilestonesLate > 0 ? $"{f.MilestonesLate} überfällig" : "erreicht")</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Blockiert / überfällig</span><span class="mat-stat__value">@f.Todos.Blocked / @f.Todos.Overdue</span><span class="mat-stat__delta @(f.Todos.Blocked + f.Todos.Overdue > 0 ? "mat-stat__delta--down" : "")">@(f.ActiveRisks > 0 ? Ui.Plural(f.ActiveRisks, "aktives Risiko", "aktive Risiken") : "keine Risiken")</span></div></div>
+<div class="np-kpis">
+    @Ui.Kpi("Todos erledigt", Fmt.Percent(f.Todos.Completion), f.Todos.Done + " von " + (f.Todos.Total - f.Todos.Discarded) + " · Indikator, nicht das Ziel", "check-square", "busy")
+    @Ui.Kpi("Ziel erreicht", f.Attainment is { } a ? Fmt.Percent(a) : "–", f.KeyResults == 0 ? "kein Schlüsselergebnis gemessen" : "nach " + Ui.Plural(f.KeyResults, "Schlüsselergebnis", "Schlüsselergebnissen"), "target", "ok")
+    @Ui.Kpi("Meilensteine", f.MilestonesReached + "/" + f.Milestones, f.MilestonesLate > 0 ? f.MilestonesLate + " überfällig" : "erreicht", "flag", f.MilestonesLate > 0 ? "error" : "info", bad: f.MilestonesLate > 0)
+    @Ui.Kpi("Blockiert / überfällig", f.Todos.Blocked + " / " + f.Todos.Overdue, f.ActiveRisks > 0 ? Ui.Plural(f.ActiveRisks, "aktives Risiko", "aktive Risiken") : "keine Risiken", "alert", f.Todos.Blocked + f.Todos.Overdue > 0 ? "error" : "ok", bad: f.Todos.Blocked + f.Todos.Overdue > 0)
 </div>
 
 <div class="mat-actions">

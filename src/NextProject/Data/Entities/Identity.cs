@@ -32,6 +32,9 @@ public class User : AuditedEntity, ISoftDeletable
     /// <summary>"system", "light" or "dark": kept per user, applied at sign-in.</summary>
     public string Theme { get; set; } = "system";
 
+    /// <summary>The secret in the address of the personal calendar subscription (iCal); a new one makes the old address worthless.</summary>
+    public Guid CalendarToken { get; set; } = Guid.NewGuid();
+
     public DateTime? LastLoginDate { get; set; }
 
     public int FailedLogins { get; set; }

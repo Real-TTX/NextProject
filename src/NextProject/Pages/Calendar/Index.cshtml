@@ -3,13 +3,82 @@
 
 <partial name="_LinkTabs" model="Model.Tabs" />
 
-@if (Model.Count == 0)
-{
-    <div class="mat-empty">
-        <span class="mat-empty__icon">@Ui.Icon("calendar")</span>
-        <div class="mat-empty__title">Keine Termine</div>
-        <p>Sobald Todos ein Fälligkeitsdatum haben oder es Meilensteine gibt, erscheinen sie hier.</p>
-    </div>
-}
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
 
-<section class="mat-schedule np-calendar" id="calendar" data-schedule lang="de" aria-label="Kalender" data-view="month" data-date="@Model.Today" data-week-numbers data-views="month,week,agenda,year" data-events="@Model.EventsJson"></section>
+    <p class="mat-hint np-cal-note">
+        @if (Model.Mine) { <span>Gezeigt: die Termine, die dich betreffen. Im Filter „Wessen Termine“ siehst du alle.</span> }
+        else { <span>Gezeigt: die Termine aller beziehungsweise der gewählten Person.</span> }
+    </p>
+
+    <partial name="_CalendarLegend" />
+
+    <div class="mat-actions np-cal-actions">
+        <a class="mat-btn mat-btn--primary" id="cal-new" href="/Todos/Edit?due=@Model.Today&returnUrl=@Uri.EscapeDataString("/Calendar" + (Model.FilterQuery.Length > 0 ? "?" + Model.FilterQuery : ""))" data-cal-new="/Todos/Edit?returnUrl=@Uri.EscapeDataString("/Calendar" + (Model.FilterQuery.Length > 0 ? "?" + Model.FilterQuery : ""))">@Ui.Icon("plus")<span>Neues Todo</span></a>
+        <span class="mat-muted np-cal-newhint" id="cal-new-day" aria-live="polite">am @Fmt.Date(DateOnly.Parse(Model.Today))</span>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="mat-empty">
+            <span class="mat-empty__icon">@Ui.Icon("calendar")</span>
+            <div class="mat-empty__title">Keine Termine</div>
+            <p>Mit diesen Filtern gibt es nichts. Sobald Todos ein Fälligkeitsdatum haben oder es Meilensteine gibt, erscheinen sie hier.</p>
+        </div>
+    }
+
+    <section class="mat-schedule np-calendar" id="calendar" data-schedule lang="de" aria-label="Kalender" data-view="@Model.StartView" data-date="@Model.StartDate" data-week-numbers data-views="month,week,agenda,year" data-events="@Model.EventsJson"></section>
+    <p class="mat-hint">Klicke einen Todo an, um ihn zu verschieben oder zu erledigen. In der Monatsansicht kannst du ihn auch auf einen anderen Tag ziehen. Ein Klick auf einen Tag wählt ihn für „Neues Todo“.</p>
+</div>
+
+<np-card title="In den Kalender der Arbeit oder des Telefons" icon="share">
+    <p class="mat-muted">Deine Termine als <strong>Abo</strong>: Outlook, Apple Kalender, Google Kalender und die meisten Telefone holen sie von dort selbst und halten sie aktuell (etwa stündlich). Die Adresse ist ein Geheimnis wie ein Passwort: wer sie kennt, sieht deine Termine.</p>
+    <div class="mat-field">
+        <label class="mat-label" for="cal-subscribe">Abo-Adresse</label>
+        <div class="mat-input-group">
+            <input class="mat-input mat-mono" id="cal-subscribe" value="@Model.SubscribeUrl" readonly />
+            <button type="button" class="mat-btn mat-btn--secondary" data-copy="#cal-subscribe">@Ui.Icon("copy")<span>Kopieren</span></button>
+        </div>
+        <span class="mat-hint">Das Abo zeigt immer die Termine, die dich betreffen, ohne die Filter dieser Seite.</span>
+    </div>
+    <div class="mat-actions np-addform">
+        <a class="mat-btn mat-btn--secondary" href="@Model.SubscribeWebcal">@Ui.Icon("calendar")<span>In der Kalender-App öffnen</span></a>
+        <a class="mat-btn mat-btn--secondary" href="/Calendar?handler=Ics@(Model.FilterQuery.Length > 0 ? "&" + Model.FilterQuery : "")">@Ui.Icon("download")<span>Gezeigte Termine als Datei (.ics)</span></a>
+        <form method="post" asp-page-handler="Rotate">
+            <button type="submit" class="mat-btn mat-btn--ghost" data-confirm="Eine neue Abo-Adresse erzeugen? Die alte zeigt danach nichts mehr, du musst die neue in deinem Kalenderprogramm eintragen." data-confirm-ok="Neue Adresse">@Ui.Icon("refresh")<span>Neue Adresse erzeugen</span></button>
+        </form>
+    </div>
+</np-card>
+
+@* The dialog of a todo: move it to another day, finish it, open it. Filled and opened by calendar.js. *@
+<dialog class="mat-dialog mat-dialog--sm" id="cal-todo" aria-labelledby="cal-todo-title">
+    <div class="mat-dialog__form">
+        <div class="mat-dialog__head">
+            @Ui.Icon("check-square")
+            <h2 class="mat-dialog__title" id="cal-todo-title">Todo</h2>
+            <button type="button" class="mat-btn mat-btn--ghost mat-btn--icon mat-dialog__close" data-dialog-close aria-label="Schließen">@Ui.Icon("x")</button>
+        </div>
+        <div class="mat-dialog__body mat-form">
+            <p class="mat-muted" data-cal="meta"></p>
+            <div class="mat-field">
+                <label class="mat-label" for="cal-due">Fällig am</label>
+                <input class="mat-input" type="date" id="cal-due" data-cal="due" />
+                <span class="mat-hint">Hat das Todo ein Startdatum, wandert es mit.</span>
+                <span class="mat-error" aria-live="polite" data-cal="error"></span>
+            </div>
+        </div>
+        <div class="mat-dialog__foot">
+            <div class="mat-btn-row mat-btn-row--plain">
+                <button type="button" class="mat-btn mat-btn--primary" data-cal="move">@Ui.Icon("calendar")<span>Verschieben</span></button>
+                <button type="button" class="mat-btn mat-btn--secondary" data-cal="done">@Ui.Icon("check")<span>Erledigen</span></button>
+                <a class="mat-btn mat-btn--secondary" href="#" data-cal="open">@Ui.Icon("external")<span>Öffnen</span></a>
+                <span class="mat-btn-row__spacer"></span>
+                <button type="button" class="mat-btn mat-btn--ghost mat-btn--end" data-dialog-close>Schließen</button>
+            </div>
+        </div>
+    </div>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/calendar.js" asp-append-version="true"></script>
+}

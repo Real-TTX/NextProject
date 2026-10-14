@@ -1,10 +1,10 @@
 @page
 @model NextProject.Pages.Admin.SystemModel
 
-<div class="mat-grid mat-grid--3">
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Version</span><span class="mat-stat__value mat-mono">@Model.Version</span><span class="mat-stat__delta">seit @Fmt.Moment(Model.Started) in Betrieb</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Datenbank</span><span class="mat-stat__value">@Fmt.FileSize(Model.DatabaseBytes)</span><span class="mat-stat__delta">@Model.DatabaseVersion</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Arbeitsspeicher</span><span class="mat-stat__value">@Fmt.FileSize(Model.Memory)</span><span class="mat-stat__delta">der Anwendung</span></div></div>
+<div class="np-kpis">
+    @Ui.Kpi("Version", Model.Version, "seit " + Fmt.Moment(Model.Started) + " in Betrieb", "server", "accent")
+    @Ui.Kpi("Datenbank", Fmt.FileSize(Model.DatabaseBytes), Model.DatabaseVersion, "database", "busy")
+    @Ui.Kpi("Arbeitsspeicher", Fmt.FileSize(Model.Memory), "der Anwendung", "activity", "info")
 </div>
 
 <div class="mat-grid mat-grid--2">

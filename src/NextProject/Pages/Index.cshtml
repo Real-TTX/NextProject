@@ -1,12 +1,22 @@
 @page
 @model NextProject.Pages.IndexModel
 
-<div class="mat-page__head">
-    <div class="mat-page__title">
-        <h1>Hallo@(Model.FirstName.Length > 0 ? ", " + Model.FirstName : "")</h1>
-        <p class="mat-page__sub">So steht es um deine Aufgaben, Projekte und Ziele.</p>
+<section class="np-hero" aria-labelledby="hero-title">
+    <span class="np-hero__mark" aria-hidden="true">@Ui.Icon("np-logo")</span>
+    <div class="np-hero__text">
+        <p class="np-hero__kicker">@Model.Today.ToString("dddd, d. MMMM yyyy", Fmt.Culture)</p>
+        <h1 id="hero-title">Hallo@(Model.FirstName.Length > 0 ? ", " + Model.FirstName : "")</h1>
+        <p class="np-hero__line">
+            @if (Model.MyOpen == 0) { <span>Du hast nichts offen. Zeit für etwas Neues.</span> }
+            else { <span>Du hast @Ui.Plural(Model.MyOpen, "offenes Todo", "offene Todos")@(Model.MyOverdue > 0 ? ", " + Model.MyOverdue + " davon überfällig" : "").</span> }
+        </p>
+        <div class="np-hero__actions">
+            <a class="np-btn-light" href="/Todos/Edit">@Ui.Icon("plus")<span>Neues Todo</span></a>
+            <a class="np-btn-outline-light" href="/Todos/Board?mine=true">@Ui.Icon("columns")<span>Mein Board</span></a>
+            <a class="np-btn-outline-light" href="/Calendar">@Ui.Icon("calendar")<span>Kalender</span></a>
+        </div>
     </div>
-</div>
+</section>
 
 @if (Model.IsEmpty)
 {
@@ -23,11 +33,11 @@
     </np-card>
 }
 
-<div class="mat-grid mat-grid--4">
-    <a class="mat-card np-statlink" href="/Todos"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Meine Todos</span><span class="mat-stat__value">@Model.MyOpen</span><span class="mat-stat__delta @(Model.MyOverdue > 0 ? "mat-stat__delta--down" : "")">@(Model.MyOverdue > 0 ? Model.MyOverdue + " überfällig" : "nichts überfällig")</span></div></a>
-    <a class="mat-card np-statlink" href="/Projects"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Meine Projekte</span><span class="mat-stat__value">@Model.MyProjects</span><span class="mat-stat__delta @(Model.MyProjectsAtRisk > 0 ? "mat-stat__delta--down" : "")">@(Model.MyProjectsAtRisk > 0 ? Model.MyProjectsAtRisk + " gefährdet" : "keins gefährdet")</span></div></a>
-    <a class="mat-card np-statlink" href="/Goals"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Ziele & Schlüsselergebnisse</span><span class="mat-stat__value">@Model.ActiveGoals / @Model.KeyResults</span><span class="mat-stat__delta @(Model.KeyResultsLate > 0 ? "mat-stat__delta--down" : "")">@(Model.KeyResultsLate > 0 ? Model.KeyResultsLate + " Schlüsselergebnisse im Rückstand" : "kein Rückstand")</span></div></a>
-    <a class="mat-card np-statlink" href="/Reports"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Team-Status</span><span class="mat-stat__value">@Model.TeamState</span><span class="mat-stat__delta @(Model.TeamBlocked > 0 ? "mat-stat__delta--down" : "")">@(Model.TeamBlocked > 0 ? Model.TeamBlocked + " blockiert" : "keine Blockaden")@(Model.TeamOverdue > 0 ? ", " + Model.TeamOverdue + " überfällig" : "")</span></div></a>
+<div class="np-kpis">
+    @Ui.Kpi("Meine Todos", Model.MyOpen.ToString(), Model.MyOverdue > 0 ? Model.MyOverdue + " überfällig" : "nichts überfällig", "check-square", "accent", "/Todos", Model.MyOverdue > 0)
+    @Ui.Kpi("Meine Projekte", Model.MyProjects.ToString(), Model.MyProjectsAtRisk > 0 ? Model.MyProjectsAtRisk + " gefährdet" : "keins gefährdet", "folder", "busy", "/Projects", Model.MyProjectsAtRisk > 0)
+    @Ui.Kpi("Ziele / Key Results", Model.ActiveGoals + " / " + Model.KeyResults, Model.KeyResultsLate > 0 ? Model.KeyResultsLate + " im Rückstand" : "kein Rückstand", "target", "info", "/Goals", Model.KeyResultsLate > 0)
+    @Ui.Kpi("Team-Status", Ui.Pill(Model.TeamState, Model.TeamState == "Gut" ? "ok" : Model.TeamState == "Achtung" ? "error" : "warn"), (Model.TeamBlocked > 0 ? Model.TeamBlocked + " blockiert" : "keine Blockaden") + (Model.TeamOverdue > 0 ? ", " + Model.TeamOverdue + " überfällig" : ""), "users", Model.TeamState == "Gut" ? "ok" : Model.TeamState == "Achtung" ? "error" : "warn", "/Reports", Model.TeamBlocked > 0 || Model.TeamOverdue > 0)
 </div>
 
 <div class="mat-cols">

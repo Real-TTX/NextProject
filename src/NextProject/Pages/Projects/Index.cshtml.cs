@@ -16,9 +16,16 @@ public sealed class IndexModel(NpDbContext db, Lookups lookups, PlanningService 
 
     public TableModel Table { get; private set; } = null!;
 
+    public ProjectCards Cards { get; private set; } = null!;
+
+    public ViewToggle Toggle { get; private set; } = null!;
+
+    public string View { get; private set; } = "karten";
+
     public async Task OnGetAsync()
     {
         Head("Projekte", "Initiativen, die auf die Ziele des Unternehmens einzahlen.", ("Projekte", null));
+        View = Request.Query["ansicht"] == "liste" ? "liste" : "karten";
 
         var users = await lookups.UsersAsync();
         var departments = await lookups.DepartmentsAsync();
@@ -53,12 +60,16 @@ public sealed class IndexModel(NpDbContext db, Lookups lookups, PlanningService 
                 ["created"] = ("Angelegt", (q, d) => d ? q.OrderBy(p => p.CreateDate) : q.OrderByDescending(p => p.CreateDate)),
             },
             DefaultSort = "name",
+            PageSize = 18,
+            Keep = new Dictionary<string, string?> { ["ansicht"] = View == "liste" ? "liste" : null },
         };
 
         var result = await ListBuilder.RunAsync(db.Project.AsNoTracking().Include(p => p.OwnerUser).Include(p => p.Goals).ThenInclude(g => g.Goal), Request, spec, HttpContext.RequestAborted);
         Toolbar = result.Toolbar;
         Pager = result.Pager;
         var facts = await planning.ProjectFactsAsync([.. result.Items.Select(p => p.Id)], HttpContext.RequestAborted);
+        Cards = new ProjectCards([.. result.Items.Select(p => new ProjectCard(p, facts.GetValueOrDefault(p.Id)))], planning.Today);
+        Toggle = ViewToggle.For(View, Toolbar.UrlWithPage(1));
         Table = TableModel.Of("project-table", "Projekte", result.Items,
         [
             (new TableColumn("Projekt"), p => Ui.NameWithSub(p.Name, $"/Projects/Details?id={p.Id}", GoalLine(p))),

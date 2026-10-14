@@ -1,11 +1,11 @@
 @page
 @model NextProject.Pages.Reports.IndexModel
 
-<div class="mat-grid mat-grid--4">
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Aktive Ziele</span><span class="mat-stat__value">@Model.ActiveGoals</span><span class="mat-stat__delta">@(Model.AverageAttainment is { } a ? "im Mittel " + Fmt.Percent(a) + " erreicht" : "noch nicht gemessen")</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Projekte in Umsetzung</span><span class="mat-stat__value">@Model.ProjectsRunning</span><span class="mat-stat__delta @(Model.ProjectsAtRisk > 0 ? "mat-stat__delta--down" : "")">@(Model.ProjectsAtRisk > 0 ? Model.ProjectsAtRisk + " gefährdet" : "keins gefährdet")</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Offene Todos</span><span class="mat-stat__value">@Model.Todos.Pending</span><span class="mat-stat__delta @(Model.Todos.Overdue > 0 ? "mat-stat__delta--down" : "")">@(Model.Todos.Overdue > 0 ? Model.Todos.Overdue + " überfällig" : "nichts überfällig")</span></div></div>
-    <div class="mat-card"><div class="mat-card__body mat-stat"><span class="mat-stat__label">Blockiert</span><span class="mat-stat__value">@Model.Todos.Blocked</span><span class="mat-stat__delta">@(Model.Todos.InReview) in Prüfung</span></div></div>
+<div class="np-kpis">
+    @Ui.Kpi("Aktive Ziele", Model.ActiveGoals.ToString(), Model.AverageAttainment is { } a ? "im Mittel " + Fmt.Percent(a) + " erreicht" : "noch nicht gemessen", "target", "info")
+    @Ui.Kpi("Projekte in Umsetzung", Model.ProjectsRunning.ToString(), Model.ProjectsAtRisk > 0 ? Model.ProjectsAtRisk + " gefährdet" : "keins gefährdet", "folder", "busy", bad: Model.ProjectsAtRisk > 0)
+    @Ui.Kpi("Offene Todos", Model.Todos.Pending.ToString(), Model.Todos.Overdue > 0 ? Model.Todos.Overdue + " überfällig" : "nichts überfällig", "check-square", "accent", bad: Model.Todos.Overdue > 0)
+    @Ui.Kpi("Blockiert", Model.Todos.Blocked.ToString(), Model.Todos.InReview + " in Prüfung", "lock", Model.Todos.Blocked > 0 ? "error" : "ok", bad: Model.Todos.Blocked > 0)
 </div>
 
 <np-card title="Strategische Umsetzung" icon="target" sub="Ziele und die Projekte, die auf sie einzahlen">

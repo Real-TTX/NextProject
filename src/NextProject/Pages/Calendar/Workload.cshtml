@@ -1,0 +1,72 @@
+@page
+@model NextProject.Pages.Calendar.WorkloadModel
+@using NextProject.Pages.Calendar
+
+<partial name="_LinkTabs" model="Model.Tabs" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    <ul class="np-legend" aria-label="Legende">
+        <li><span class="np-load np-load--1">1–3</span> normale Woche</li>
+        <li><span class="np-load np-load--2">4–6</span> volle Woche</li>
+        <li><span class="np-load np-load--3">7+</span> mehr, als sich gut schaffen lässt</li>
+        <li><span class="np-load np-load--over">n</span> überfällig</li>
+    </ul>
+
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="mat-empty"><span class="mat-empty__icon">@Ui.Icon("users")</span><div class="mat-empty__title">Niemand gefunden</div><p>Ändere die Suche oder den Filter.</p></div>
+    }
+    else
+    {
+        <div class="mat-table-wrap">
+            <table class="mat-table np-workload" id="workload-table">
+                <caption class="mat-sr-only">Offene Todos je Person und Woche</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Person</th>
+                        <th scope="col" class="mat-num">Überfällig</th>
+                        @foreach (var week in Model.WeekStarts)
+                        {
+                            <th scope="col" class="mat-num mat-hide-sm" title="Woche ab @Fmt.Date(week)">KW @WorkloadModel.Week(week)<small class="np-sub mat-muted">@week.ToString("dd.MM.", Fmt.Culture)</small></th>
+                        }
+                        <th scope="col" class="mat-num mat-hide-sm">Ohne Termin</th>
+                        <th scope="col" class="mat-num">Gesamt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td data-label="Person"><div class="np-name">@Ui.Person(row.Name)@if (!string.IsNullOrEmpty(row.Job) || !string.IsNullOrEmpty(row.Department)) { <small class="mat-muted np-sub">@string.Join(" · ", new[] { row.Job, row.Department }.Where(s => !string.IsNullOrEmpty(s)))</small> }</div></td>
+                            <td data-label="Überfällig" class="mat-num">
+                                @if (row.Overdue > 0) { <a class="np-load np-load--over" href="/Todos?scope=team&owner=@row.UserId&faellig=ueberfaellig">@row.Overdue</a> } else { <span class="mat-muted">0</span> }
+                            </td>
+                            @for (var i = 0; i < row.Weeks.Length; i++)
+                            {
+                                var count = row.Weeks[i];
+                                var level = Workload.Level(count);
+                                <td data-label="KW @WorkloadModel.Week(Model.WeekStarts[i])" class="mat-num mat-hide-sm">
+                                    @if (count > 0) { <a class="np-load np-load--@level" href="@Model.CalendarLink(row.UserId, Model.WeekStarts[i])" title="@count offen in der Woche ab @Fmt.Date(Model.WeekStarts[i])">@count</a> } else { <span class="mat-muted">–</span> }
+                                </td>
+                            }
+                            <td data-label="Ohne Termin" class="mat-num mat-hide-sm">@(row.NoDate > 0 ? row.NoDate.ToString() : "–")</td>
+                            <td data-label="Gesamt" class="mat-num"><strong>@row.Total</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <p class="mat-hint">Gezählt werden die offenen Todos der Verantwortlichen nach ihrem Fälligkeitsdatum. Ein Todo, das schon überfällig ist, steht nur in der Spalte „Überfällig“. Ein Klick auf eine Zahl zeigt die Todos im Kalender.</p>
+
+    <div class="mat-actions">
+        @if (Model.Offset > 0)
+        {
+            <a class="mat-btn mat-btn--secondary" href="/Calendar/Workload?ab=@(Math.Max(0, Model.Offset - WorkloadModel.Weeks))@(Model.FilterQuery.Length > 0 ? "&" + Model.FilterQuery : "")">@Ui.Icon("chevron-left")<span>Frühere Wochen</span></a>
+        }
+        <a class="mat-btn mat-btn--secondary" href="/Calendar/Workload?ab=@(Model.Offset + WorkloadModel.Weeks)@(Model.FilterQuery.Length > 0 ? "&" + Model.FilterQuery : "")"><span>Spätere Wochen</span>@Ui.Icon("chevron-right")</a>
+    </div>
+</div>

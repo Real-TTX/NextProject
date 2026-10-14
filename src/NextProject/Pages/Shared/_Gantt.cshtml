@@ -1,0 +1,73 @@
+@model GanttView
+@*
+    The schedule of the projects: a row per project, the time from left to right. The names stay at the left while the time scrolls. Every bar carries its dates as text
+    as well; a project opens to show its todos (np-gantt.js, or all at once with the link above). data-np-bar="left,width" is turned into a position by app.js.
+*@
+@{ var openAll = ViewData["OpenAll"] is true; }
+<div class="np-gantt" role="group" aria-label="Zeitplan der Projekte">
+    <div class="np-gantt__inner">
+        <div class="np-gantt__head">
+            <div class="np-gantt__corner">Projekt</div>
+            <div class="np-gantt__scale" aria-hidden="true">
+                <div class="np-gantt__months">
+                    @foreach (var tick in Model.Months)
+                    {
+                        <span class="np-gantt__month" data-np-bar="@GanttView.Css(tick.Left),@GanttView.Css(tick.Width)">@tick.Label</span>
+                    }
+                </div>
+                @if (Model.Weeks.Count > 0)
+                {
+                    <div class="np-gantt__weeks">
+                        @foreach (var tick in Model.Weeks)
+                        {
+                            <span class="np-gantt__week" data-np-bar="@GanttView.Css(tick.Left),@GanttView.Css(tick.Width)">@tick.Label</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="np-gantt__rows">
+            @if (Model.TodayLeft is { } today)
+            {
+                <span class="np-gantt__today" data-np-bar="@GanttView.Css(today),0" aria-hidden="true"><span>heute</span></span>
+            }
+
+            @foreach (var row in Model.Rows)
+            {
+                <div class="np-gantt__row np-gantt__row--@(row.Level == 0 ? "project" : "todo")" data-np-key="@row.Key" data-np-parent="@row.ParentKey" hidden="@(row.ParentKey is not null && !openAll)">
+                    <div class="np-gantt__label">
+                        @if (row.Level == 0 && row.ChildCount > 0)
+                        {
+                            <button type="button" class="np-gantt__toggle" data-np-toggle="@row.Key" aria-expanded="@(openAll ? "true" : "false")" aria-label="Todos von „@row.Label“ zeigen oder verbergen (@row.ChildCount)">@Ui.Icon("chevron-right")</button>
+                        }
+                        else if (row.Level == 0)
+                        {
+                            <span class="np-gantt__toggle np-gantt__toggle--none" aria-hidden="true"></span>
+                        }
+
+                        <a class="np-gantt__name" href="@row.Href"><strong>@row.Label</strong>@if (!string.IsNullOrEmpty(row.Sub)) { <small>@row.Sub</small> }</a>
+                    </div>
+                    <div class="np-gantt__track">
+                        @foreach (var mark in row.Marks)
+                        {
+                            <span class="np-gantt__mark np-gantt__mark--@mark.Tone" data-np-bar="@GanttView.Css(mark.Left),0" role="img" aria-label="Meilenstein @mark.Label"></span>
+                        }
+
+                        @if (row.Bar is { } bar)
+                        {
+                            <span class="np-gantt__bar np-gantt__bar--@bar.Tone @(bar.CutLeft ? "is-cut-left" : "") @(bar.CutRight ? "is-cut-right" : "")" data-np-bar="@GanttView.Css(bar.Left),@GanttView.Css(bar.Width)" role="img" aria-label="@bar.Label, @bar.Dates">
+                                @if (bar.Progress is { } progress && progress > 0)
+                                {
+                                    <span class="np-gantt__fill" data-np-bar="0,@GanttView.Css(progress)"></span>
+                                }
+
+                                @if (row.Level == 0) { <span class="np-gantt__barlabel">@bar.Dates</span> }
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

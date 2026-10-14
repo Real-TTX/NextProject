@@ -1,6 +1,6 @@
 using System.Text.Json;
+using NextProject.Core.Planning;
 using NextProject.Data;
-using NextProject.Data.Entities;
 using NextProject.Services;
 using NextProject.UiKit;
 using Microsoft.AspNetCore.Mvc;
@@ -8,62 +8,81 @@ using Microsoft.EntityFrameworkCore;
 
 namespace NextProject.Pages.Calendar;
 
-/// <summary>The dates of the work in one calendar: todos that are due, milestones, the end of projects, key results that are due and the next reviews.</summary>
-public sealed class IndexModel(NpDbContext db, ICurrentUser me, PlanningService planning) : PageModelBase
+/// <summary>
+/// The dates of the work in one calendar: todos (from the start to the due date), milestones, the end of projects, key results that are due and the next reviews. Filtered
+/// like a list, changed in place (click a todo to move it or finish it, drag it to another day, click a day to make a todo), and taken to the calendar program of the phone
+/// or the office as a file or as a subscription.
+/// </summary>
+public sealed class IndexModel(NpDbContext db, CalendarService calendar, ICurrentUser me, Lookups lookups, PlanningService planning, PublicUrl urls) : PageModelBase
 {
-    private sealed record CalendarEvent(string Id, string Title, string Start, string? End, string Tone, string? Status, string? Url, string? Note);
+    private static readonly string[] FilterNames = ["wessen", "projekt", "person", "abteilung", "ziel", "art", "status"];
 
     public LinkTabsModel Tabs { get; private set; } = null!;
+
+    public ToolbarModel Toolbar { get; private set; } = null!;
 
     public string EventsJson { get; private set; } = "[]";
 
     public int Count { get; private set; }
 
+    public bool Mine { get; private set; }
+
     public string Today => planning.Today.ToString("yyyy-MM-dd");
 
-    public async Task OnGetAsync([FromQuery(Name = "scope")] string? scope)
+    /// <summary>The day the calendar opens on (the address can name one: the workload page links to a week) and the view.</summary>
+    public string StartDate { get; private set; } = "";
+
+    public string StartView { get; private set; } = "month";
+
+    public string SubscribeUrl { get; private set; } = "";
+
+    public string SubscribeWebcal => SubscribeUrl.Replace("https://", "webcal://").Replace("http://", "webcal://");
+
+    public string FilterQuery { get; private set; } = "";
+
+    public async Task OnGetAsync([FromQuery(Name = "datum")] string? date, [FromQuery(Name = "ansicht")] string? view)
     {
-        var mine = scope != "alle";
-        Head("Kalender", "Termine von Todos, Meilensteinen, Projekten, Schlüsselergebnissen und Reviews.", ("Kalender", null));
-        Tabs = new LinkTabsModel("Wessen Termine", [new("meine", "Meine", "/Calendar", "user"), new("alle", "Alle", "/Calendar?scope=alle", "users")], mine ? "meine" : "alle");
+        Head("Kalender", "Alle Termine der Arbeit in einem Kalender.", ("Kalender", null));
+        ViewData["ActiveHref"] = "/Calendar";
+        FilterQuery = CalendarToolbar.Query(Request, FilterNames.Append("q").ToArray());
+        Tabs = CalendarToolbar.Tabs("kalender", FilterQuery);
 
+        StartDate = DateOnly.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var start) ? start.ToString("yyyy-MM-dd") : Today;
+        StartView = view is "month" or "week" or "agenda" or "year" ? view : "month";
+        var filter = CalendarToolbar.Read(Request, me.UserId ?? 0);
+        Mine = filter.Mine && filter.OwnerId is null;
         var today = planning.Today;
-        var from = today.AddMonths(-6);
-        var to = today.AddMonths(12);
-        var meId = me.UserId ?? 0;
-        var events = new List<CalendarEvent>();
+        var items = await calendar.GetAsync(filter, today.AddMonths(-6), today.AddMonths(12), HttpContext.RequestAborted);
+        Count = items.Count;
+        Toolbar = CalendarToolbar.Model("calendar", "/Calendar", "Kalender", "Termine", Request, await CalendarToolbar.FieldsAsync(Request, lookups, FilterNames), Count, "Titel ...");
 
-        var todos = db.Todo.AsNoTracking().Include(t => t.Project).Where(t => t.DueDate != null && t.DueDate >= from && t.DueDate <= to && t.Status != TodoStatus.Discarded);
-        if (mine)
+        EventsJson = JsonSerializer.Serialize(items.Select(i => new
         {
-            todos = todos.Where(t => t.OwnerUserId == meId || t.Contributors.Any(c => c.UserId == meId));
-        }
-
-        foreach (var t in await todos.OrderBy(t => t.DueDate).Take(1500).ToListAsync())
-        {
-            var tone = t.Status == TodoStatus.Done ? "ok" : t.Status == TodoStatus.Blocked || t.IsOverdue(today) ? "error" : t.Status == TodoStatus.InProgress ? "info" : "";
-            var start = t.StartDate is { } s && s < t.DueDate ? s : t.DueDate!.Value;
-            events.Add(new($"t{t.Id}", t.Title, Iso(start), start < t.DueDate ? Iso(t.DueDate!.Value) : null, tone, Labels.Of(t.Status) + (t.IsOverdue(today) ? ", überfällig" : ""), $"/Todos/Details?id={t.Id}", t.Project?.Name));
-        }
-
-        var milestones = await db.Milestone.AsNoTracking().Include(m => m.Project).Where(m => m.DueDate >= from && m.DueDate <= to).ToListAsync();
-        events.AddRange(milestones.Select(m => new CalendarEvent($"m{m.Id}", "Meilenstein: " + m.Title, Iso(m.DueDate), null, m.ReachedDate is not null ? "ok" : m.DueDate < today ? "error" : "accent", m.ReachedDate is not null ? "erreicht" : "Meilenstein", $"/Projects/Milestone?projectId={m.ProjectId}&id={m.Id}", m.Project?.Name)));
-
-        var projects = await db.Project.AsNoTracking().Where(p => p.EndDate != null && p.EndDate >= from && p.EndDate <= to && p.Status != ProjectStatus.Cancelled).ToListAsync();
-        events.AddRange(projects.Select(p => new CalendarEvent($"p{p.Id}", "Projektende: " + p.Name, Iso(p.EndDate!.Value), null, p.Status == ProjectStatus.Completed ? "ok" : "accent", Labels.Of(p.Status), $"/Projects/Details?id={p.Id}", null)));
-
-        var results = await db.KeyResult.AsNoTracking().Where(k => k.DueDate != null && k.DueDate >= from && k.DueDate <= to).ToListAsync();
-        events.AddRange(results.Select(k => new CalendarEvent($"k{k.Id}", "Schlüsselergebnis: " + k.Title, Iso(k.DueDate!.Value), null, k.Attainment >= 1m ? "ok" : "info", Fmt.Percent(k.Attainment) + " erreicht", $"/Goals/KeyResult?id={k.Id}", null)));
-
-        var reviews = await db.Review.AsNoTracking().Include(r => r.Project).Include(r => r.Goal).Where(r => r.NextReviewDate != null && r.NextReviewDate >= from && r.NextReviewDate <= to).ToListAsync();
-        events.AddRange(reviews.Select(r => new CalendarEvent($"r{r.Id}", "Nächstes Review: " + (r.Project?.Name ?? r.Goal?.Title), Iso(r.NextReviewDate!.Value), null, "warn", "Review", $"/Reviews/Edit?id={r.Id}", null)));
-
-        Count = events.Count;
-        EventsJson = JsonSerializer.Serialize(events.Select(e => new
-        {
-            id = e.Id, title = e.Title, start = e.Start, end = e.End, tone = e.Tone, status = e.Status, url = e.Url, note = e.Note,
+            id = i.Id, title = i.Title, start = i.Start.ToString("yyyy-MM-dd"), end = i.End?.ToString("yyyy-MM-dd"), tone = i.Tone, status = i.Status, url = i.Url, note = i.Note,
+            kind = i.Kind, entityId = i.EntityId, movable = i.Movable,
         }), new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
+
+        var token = await db.User.AsNoTracking().Where(u => u.Id == me.UserId).Select(u => u.CalendarToken).FirstAsync();
+        SubscribeUrl = urls.Absolute($"/cal/{token}.ics");
     }
 
-    private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd");
+    /// <summary>The dates the calendar shows now as a file (the filter of the address applies), for a calendar program that cannot subscribe.</summary>
+    public async Task<IActionResult> OnGetIcsAsync()
+    {
+        var today = planning.Today;
+        var items = await calendar.GetAsync(CalendarToolbar.Read(Request, me.UserId ?? 0), today.AddMonths(-2), today.AddMonths(12), HttpContext.RequestAborted);
+        var events = items.Select(i => new IcsEvent(i.Id + "@nextproject", i.Title, i.Start, i.End, i.Description, urls.Absolute(i.Url), i.Note, i.Done));
+        var text = IcsWriter.Write("NextProject: " + me.Name, events, DateTime.UtcNow);
+        return File(System.Text.Encoding.UTF8.GetBytes(text), "text/calendar; charset=utf-8", $"nextproject-kalender-{today:yyyy-MM-dd}.ics");
+    }
+
+    /// <summary>A new secret for the subscription address: the old address stops working, for a person whose address got out.</summary>
+    public async Task<IActionResult> OnPostRotateAsync()
+    {
+        var user = await db.User.FirstAsync(u => u.Id == me.UserId);
+        user.CalendarToken = Guid.NewGuid();
+        await db.SaveChangesAsync();
+        Flash("Die Abo-Adresse ist neu. Die alte Adresse zeigt nichts mehr: trage die neue in deinem Kalenderprogramm ein.");
+        return RedirectToPage();
+    }
 }

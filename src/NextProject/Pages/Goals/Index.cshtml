@@ -2,8 +2,16 @@
 @model NextProject.Pages.Goals.IndexModel
 
 <div class="mat-list">
+    <partial name="_ViewToggle" model="Model.Toggle" />
     <partial name="_Toolbar" model="Model.Toolbar" />
-    <partial name="_Table" model="Model.Table" />
+    @if (Model.View == "karten" && Model.Cards.Items.Count > 0)
+    {
+        <partial name="_GoalCards" model="Model.Cards" />
+    }
+    else
+    {
+        <partial name="_Table" model="Model.Table" />
+    }
     <partial name="_Pager" model="Model.Pager" />
     <div class="mat-actions">
         <a class="mat-btn mat-btn--primary" href="/Goals/Edit">@Ui.Icon("plus")<span>Neues Ziel</span></a>

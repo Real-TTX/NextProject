@@ -1,0 +1,10 @@
+@model ViewToggle
+@*
+    The switch of a list between cards and a table. It is a tool of the list, so it sits above it, at the right end, next to the toolbar.
+*@
+<div class="np-viewbar">
+    <span class="np-viewtoggle" role="group" aria-label="Ansicht">
+        <a href="@Model.CardsHref" class="@(Model.Current == "karten" ? "is-active" : "")" aria-current="@(Model.Current == "karten" ? "true" : null)">@Ui.Icon("grid")<span>Karten</span></a>
+        <a href="@Model.ListHref" class="@(Model.Current == "liste" ? "is-active" : "")" aria-current="@(Model.Current == "liste" ? "true" : null)">@Ui.Icon("list")<span>Liste</span></a>
+    </span>
+</div>

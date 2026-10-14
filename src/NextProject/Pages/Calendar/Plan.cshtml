@@ -1,0 +1,65 @@
+@page
+@model NextProject.Pages.Calendar.PlanModel
+
+<partial name="_LinkTabs" model="Model.Tabs" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    <div class="np-gantt-bar">
+        <div class="np-gantt-nav" role="group" aria-label="Zeitraum">
+            <a class="mat-btn mat-btn--secondary mat-btn--icon" href="@Model.MoveHref(-Model.WindowMonths)" aria-label="Früher" data-tip="Früher">@Ui.Icon("chevron-left")</a>
+            <a class="mat-btn mat-btn--secondary" href="@Model.TodayHref()">Heute</a>
+            <a class="mat-btn mat-btn--secondary mat-btn--icon" href="@Model.MoveHref(Model.WindowMonths)" aria-label="Später" data-tip="Später">@Ui.Icon("chevron-right")</a>
+            <strong class="np-gantt-range">@Model.Gantt.From.ToString("MMMM yyyy", Fmt.Culture) bis @Model.Gantt.To.ToString("MMMM yyyy", Fmt.Culture)</strong>
+        </div>
+        <span class="np-viewtoggle" role="group" aria-label="Zoom">
+            <a href="@Model.ZoomHref("quartal")" class="@(Model.Zoom == "quartal" ? "is-active" : "")">3 Monate</a>
+            <a href="@Model.ZoomHref("halbjahr")" class="@(Model.Zoom == "halbjahr" ? "is-active" : "")">6 Monate</a>
+            <a href="@Model.ZoomHref("jahr")" class="@(Model.Zoom == "jahr" ? "is-active" : "")">12 Monate</a>
+        </span>
+        <a class="mat-btn mat-btn--ghost" href="@Model.OpenHref(!Model.OpenAll)">@Ui.Icon(Model.OpenAll ? "minus" : "plus")<span>@(Model.OpenAll ? "Todos einklappen" : "Alle Todos aufklappen")</span></a>
+    </div>
+
+    <ul class="np-legend" aria-label="Legende">
+        <li><span class="np-chip np-chip--busy">in Umsetzung</span></li>
+        <li><span class="np-chip np-chip--info">Planung</span></li>
+        <li><span class="np-chip np-chip--soft">pausiert, offen</span></li>
+        <li><span class="np-chip np-chip--ok">abgeschlossen, erledigt</span></li>
+        <li><span class="np-chip np-chip--error">gefährdet, überfällig</span></li>
+        <li>◆ Meilenstein</li>
+        <li>dunklerer Teil im Balken: erledigte Todos</li>
+    </ul>
+
+    @if (Model.Gantt.Rows.Count > 0)
+    {
+        <div class="np-panel np-panel--flush">
+            <partial name="_Gantt" model="Model.Gantt" />
+        </div>
+    }
+    else
+    {
+        <div class="mat-empty"><span class="mat-empty__icon">@Ui.Icon("route")</span><div class="mat-empty__title">In diesem Zeitraum läuft kein Projekt</div><p>Blättere mit den Pfeilen oder wähle einen größeren Zeitraum. Mit anderen Filtern siehst du mehr.</p></div>
+    }
+
+    @if (Model.Gantt.Hidden > 0)
+    {
+        <p class="mat-hint">@Ui.Plural(Model.Gantt.Hidden, "weiteres Projekt liegt", "weitere Projekte liegen") außerhalb dieses Zeitraums oder hat keine Termine.</p>
+    }
+
+    @if (Model.Undated.Count > 0)
+    {
+        <np-card title="Ohne Termine" icon="alert" sub="@Ui.Plural(Model.Undated.Count, "Projekt hat", "Projekte haben") kein Start- oder Enddatum">
+            <ul class="mat-listgroup mat-listgroup--flush">
+                @foreach (var p in Model.Undated)
+                {
+                    <li><a class="mat-listgroup__item" href="/Projects/Edit?id=@p.Id">@Ui.Icon("folder")<span class="mat-listgroup__text"><strong>@p.Name</strong><small>@p.OwnerUser?.DisplayName · Termine eintragen</small></span>@Labels.Pill(p.Status)</a></li>
+                }
+            </ul>
+        </np-card>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/gantt.js" asp-append-version="true"></script>
+}

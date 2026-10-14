@@ -18,7 +18,7 @@
       var parts = el.getAttribute('data-np-bar').split(',');
       var left = parseFloat(parts[0]);
       var width = parseFloat(parts[1]);
-      if (!isNaN(left)) { el.style.setProperty('--np-left', left + '%'); }
+      if (!isNaN(left)) { el.style.setProperty('--np-left', left + '%'); el.style.setProperty('--np-left-n', String(left / 100)); }
       if (!isNaN(width) && width > 0) { el.style.setProperty('--np-width', width + '%'); }
     });
   }

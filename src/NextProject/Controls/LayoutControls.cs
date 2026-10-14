@@ -77,19 +77,19 @@ public sealed class CardTagHelper : TagHelper
     {
         var body = (await output.GetChildContentAsync()).GetContent();
         var sb = new StringBuilder();
-        sb.Append("<div class=\"mat-card");
+        sb.Append("<div class=\"np-panel");
         if (output.Attributes.TryGetAttribute("class", out var cls)) { sb.Append(' ').Append(WebUtility.HtmlEncode(cls.Value?.ToString())); }
         sb.Append("\">");
         if (!string.IsNullOrEmpty(Title))
         {
-            sb.Append("<div class=\"mat-card__head\">");
-            if (!string.IsNullOrEmpty(Icon)) { sb.Append(Ui.Icon(Icon).ToHtml()); }
-            sb.Append("<span class=\"mat-card__title\">").Append(WebUtility.HtmlEncode(Title)).Append("</span>");
-            if (!string.IsNullOrEmpty(Sub)) { sb.Append("<span class=\"mat-card__sub\">").Append(WebUtility.HtmlEncode(Sub)).Append("</span>"); }
+            sb.Append("<div class=\"np-panel__head\">");
+            if (!string.IsNullOrEmpty(Icon)) { sb.Append("<span class=\"np-panel__icon\">").Append(Ui.Icon(Icon).ToHtml()).Append("</span>"); }
+            sb.Append("<h2 class=\"np-panel__title\">").Append(WebUtility.HtmlEncode(Title)).Append("</h2>");
+            if (!string.IsNullOrEmpty(Sub)) { sb.Append("<span class=\"np-panel__sub\">").Append(WebUtility.HtmlEncode(Sub)).Append("</span>"); }
             sb.Append("</div>");
         }
 
-        sb.Append("<div class=\"mat-card__body").Append(string.IsNullOrEmpty(BodyClass) ? "" : " " + BodyClass).Append("\">").Append(body).Append("</div></div>");
+        sb.Append("<div class=\"np-panel__body").Append(string.IsNullOrEmpty(BodyClass) ? "" : " " + BodyClass).Append("\">").Append(body).Append("</div></div>");
         output.TagName = null;
         output.Attributes.Clear();
         output.Content.SetHtmlContent(sb.ToString());

@@ -42,14 +42,20 @@ results, measured on a scale from a start value to a target. Both numbers are al
   due date stays in the **history**
 - **Lists that find things**: search, filters (status, owner, priority, project, due date) and sort above every list; tabs *Today*,
   *This week*, *All mine*, *Team*; a **board** (drag a card to another column; every card also has a select for phones and keyboards)
+- **Projects & goals as cards** (a switch to the list): a coloured tile for the state, the two numbers side by side, what needs a look
 - **Projects**: owner, team, period, status (planning, in progress, **at risk**, paused, completed, cancelled), priority, budget, effort,
   milestones, risks, dependencies, goals and key results; tabs for the todo list, the board and a **schedule**. The software points out
   what looks bad (blocked todos, overdue ones, a late milestone, a high risk, an end date that has passed, a pace behind time)
 - **Goals & OKRs**: goals with yearly and quarterly targets, key results with start value, target, unit, how it is measured and
   **check-ins** (value, and the share of the linked todos that were done at that time, as in the planning sheet)
 - **Reviews**: the four questions of the review sheet (deviation of implementation from strategy, learnings, adjustments, steering)
-- **Dashboard, team, calendar, reports**: what is mine today, where the team is stuck, all dates in one calendar, the table "strategic
-  implementation" and CSV exports for the spreadsheet
+- **Dashboard, team, reports**: what is mine today, where the team is stuck, the table "strategic implementation" and CSV exports for the spreadsheet
+- **Calendar**: three views. *Monat* shows every due date, milestone, project end, key-result date and review, with **filters** (whose, project,
+  person, department, goal, kind, status, search) and a legend; click a todo to move or finish it, **drag it to another day** to change its due date
+  (the start moves along), click a day to create a todo there. *Zeitplan* is a **Gantt view**: the projects below each other, the time from left
+  to right (3, 6 or 12 months), the share of finished todos inside each bar, milestones on it, the todos of a project one click away.
+  *Auslastung* counts the open todos per person and week. Every user has a private **iCal subscription** (a secret address that can be
+  replaced) and can download the file
 - **Roles**: *Admin*, *User* and *Anonymous*, which is a **share link** to a project or a goal (read only, expiry, optional password,
   counted views, can be revoked)
 - **Sign-in**: local accounts, **TOTP** (authenticator app) with recovery codes, lock-out after wrong passwords, sessions kept in the
@@ -62,13 +68,21 @@ results, measured on a scale from a start value to a target. Both numbers are al
 
 ![Board](docs/images/board.png)
 
+![Calendar: the month with filters and a legend](docs/images/calendar.png)
+
+![Schedule of all projects](docs/images/plan.png)
+
 <table>
 <tr>
-<td width="50%"><img src="docs/images/project-details.png" alt="A project: signals, numbers, tabs" /></td>
-<td width="50%"><img src="docs/images/goal.png" alt="A goal with its key results" /></td>
+<td width="50%"><img src="docs/images/projects.png" alt="Projects as cards" /></td>
+<td width="50%"><img src="docs/images/goals.png" alt="Goals as cards" /></td>
 </tr>
 <tr>
-<td><img src="docs/images/project-timeline.png" alt="The schedule of a project" /></td>
+<td><img src="docs/images/project-details.png" alt="A project: signals, numbers, tabs" /></td>
+<td><img src="docs/images/goal.png" alt="A goal with its key results" /></td>
+</tr>
+<tr>
+<td><img src="docs/images/workload.png" alt="Open todos per person and week" /></td>
 <td><img src="docs/images/reports.png" alt="Reports: strategic implementation" /></td>
 </tr>
 </table>
@@ -116,7 +130,8 @@ dotnet test NextProject.slnx    # integration tests need NEXTPROJECT_TEST_DB (an
 ```
 
 Stack: ASP.NET Core 10 Razor Pages, EF Core on PostgreSQL 17, the MatDesign toolkit ([MatUi](src/NextProject/wwwroot/ui)) for the
-interface, plain CSS and JavaScript without a build step. Branches: `main` (release), `dev` (development); the GitHub action builds
+interface (only the basics: shell, forms, tables, dialogs, the schedule) plus our own bold components in `np-ui.css`
+([what MatDesign lacks](docs/DESIGN-GAPS.md)), plain CSS and JavaScript without a build step. Branches: `main` (release), `dev` (development); the GitHub action builds
 and publishes the image: `<major>.<minor>.<build>-<date>` for releases, `nightly-<build>-<date>` for `dev`.
 
 More: [features and rules of progress](docs/PROGRESS.md) · [operation](docs/OPERATIONS.md) · [notes for working in the repository](CLAUDE.md)

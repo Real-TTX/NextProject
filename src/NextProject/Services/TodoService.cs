@@ -89,6 +89,44 @@ public sealed class TodoService(NpDbContext db, HistoryService history, TimeProv
         return null;
     }
 
+    /// <summary>
+    /// Moves the dates of a todo so that it is due on <paramref name="newDue"/> (the calendar: a card dropped on another day, a new date in the dialog). A start date moves with it,
+    /// so the todo keeps its length. A finished or discarded todo is not moved. Returns the new dates, or what is in the way.
+    /// </summary>
+    public async Task<(DateOnly? Start, DateOnly? Due, string? Error)> MoveAsync(long id, DateOnly newDue, CancellationToken ct = default)
+    {
+        var todo = await db.Todo.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (todo is null)
+        {
+            return (null, null, "Die Aufgabe gibt es nicht mehr.");
+        }
+
+        if (todo.IsClosed)
+        {
+            return (todo.StartDate, todo.DueDate, "Erledigte und verworfene Todos werden nicht verschoben. Öffne es zuerst wieder.");
+        }
+
+        if (newDue.Year is < 2000 or > 2100)
+        {
+            return (todo.StartDate, todo.DueDate, "Dieses Datum ist nicht sinnvoll.");
+        }
+
+        var before = TodoSnapshot.Of(todo);
+        if (todo.DueDate is { } old && todo.StartDate is { } start)
+        {
+            todo.StartDate = start.AddDays(newDue.DayNumber - old.DayNumber);
+        }
+        else if (todo.StartDate is { } lone && lone > newDue)
+        {
+            todo.StartDate = newDue;
+        }
+
+        todo.DueDate = newDue;
+        await RecordAsync(todo, before, ct: ct);
+        await db.SaveChangesAsync(ct);
+        return (todo.StartDate, todo.DueDate, null);
+    }
+
     /// <summary>Writes what differs from <paramref name="before"/> to the history (status, owner, due date, priority). The caller saves.</summary>
     public async Task RecordAsync(Todo todo, TodoSnapshot before, string? statusNote = null, CancellationToken ct = default)
     {

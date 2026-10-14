@@ -45,11 +45,52 @@ public static partial class Ui
     /// <summary>The first letters of a name, for an avatar.</summary>
     public static string Initials(string name) => Services.Fmt.Initials(name);
 
-    /// <summary>A status as a pill; <paramref name="tone"/> is ok, warn, error, info, busy, accent, plain or empty.</summary>
+    /// <summary>A status as a filled chip; <paramref name="tone"/> is ok, warn, error, info, busy, accent, plain or empty (a quiet grey one).</summary>
     public static IHtmlContent Pill(string text, string tone = "")
+        => new HtmlString($"<span class=\"np-chip np-chip--{(string.IsNullOrEmpty(tone) ? "soft" : tone)}\">{WebUtility.HtmlEncode(text)}</span>");
+
+    /// <summary>
+    /// A tile with a round picture and a big number (the numbers of the dashboard, of a project, of a goal). <paramref name="note"/> says what the number means; with
+    /// <paramref name="bad"/> it is written in the colour of a warning. A tile with an address is a link.
+    /// </summary>
+    public static IHtmlContent Kpi(string label, string value, string? note, string icon, string tone = "accent", string? href = null, bool bad = false)
+        => KpiOf(label, WebUtility.HtmlEncode(value), "np-kpi__value", note, icon, tone, href, bad);
+
+    /// <summary>The same tile with markup as its value (a status chip, a person).</summary>
+    public static IHtmlContent Kpi(string label, IHtmlContent value, string? note, string icon, string tone = "accent", string? href = null, bool bad = false)
+        => KpiOf(label, value.ToHtml(), "np-kpi__value np-kpi__value--small", note, icon, tone, href, bad);
+
+    private static IHtmlContent KpiOf(string label, string value, string valueClass, string? note, string icon, string tone, string? href, bool bad)
     {
-        var cls = string.IsNullOrEmpty(tone) ? "mat-pill" : $"mat-pill mat-pill--{tone}";
-        return new HtmlString($"<span class=\"{cls}\">{WebUtility.HtmlEncode(text)}</span>");
+        var tag = href is null ? "div" : "a";
+        var link = href is null ? "" : $" href=\"{WebUtility.HtmlEncode(href)}\"";
+        var noteHtml = string.IsNullOrWhiteSpace(note) ? "" : $"<span class=\"np-kpi__note{(bad ? " is-bad" : "")}\">{WebUtility.HtmlEncode(note)}</span>";
+        return new HtmlString(
+            $"<{tag} class=\"np-kpi np-kpi--{tone}\"{link}><span class=\"np-kpi__icon\">{Icon(icon).ToHtml()}</span>" +
+            $"<span class=\"np-kpi__text\"><span class=\"{valueClass}\">{value}</span><span class=\"np-kpi__label\">{WebUtility.HtmlEncode(label)}</span>{noteHtml}</span></{tag}>");
+    }
+
+    /// <summary>A share as a ring with its number in the middle; a null share is "not measured". <paramref name="tone"/> is the colour of the ring (accent, ok, busy, error ...).</summary>
+    public static IHtmlContent Ring(decimal? share, string label, string tone = "accent", bool large = false)
+    {
+        if (share is not { } s)
+        {
+            return new HtmlString($"<span class=\"np-ring{(large ? " np-ring--lg" : "")}\" role=\"img\" aria-label=\"{WebUtility.HtmlEncode(label)}: nicht gemessen\"><svg viewBox=\"0 0 36 36\" aria-hidden=\"true\"><circle class=\"np-ring__track\" cx=\"18\" cy=\"18\" r=\"15.9155\" stroke-width=\"3.6\"/></svg><span class=\"np-ring__text mat-muted\">–</span></span>");
+        }
+
+        var percent = (int)Math.Round(Math.Clamp(s, 0m, 1m) * 100, MidpointRounding.AwayFromZero);
+        var color = tone switch
+        {
+            "ok" => "var(--np-c-ok)",
+            "busy" => "var(--np-c-busy)",
+            "error" => "var(--np-c-error)",
+            "info" => "var(--np-c-info)",
+            _ => "var(--mat-accent)",
+        };
+        return new HtmlString(
+            $"<span class=\"np-ring{(large ? " np-ring--lg" : "")}\" role=\"img\" aria-label=\"{WebUtility.HtmlEncode(label)}: {percent} Prozent\" data-np-tone=\"{WebUtility.HtmlEncode(tone)}\"><svg viewBox=\"0 0 36 36\" aria-hidden=\"true\">" +
+            "<circle class=\"np-ring__track\" cx=\"18\" cy=\"18\" r=\"15.9155\" stroke-width=\"3.6\"/>" +
+            $"<circle class=\"np-ring__value np-ring__value--{tone}\" cx=\"18\" cy=\"18\" r=\"15.9155\" stroke-width=\"3.6\" stroke-dasharray=\"{percent} 100\"/></svg><span class=\"np-ring__text\">{percent}%</span></span>");
     }
 
     /// <summary>Encoded text for a table cell; empty for null.</summary>
