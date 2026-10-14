@@ -335,3 +335,25 @@ a.np-kpi:hover { box-shadow: var(--np-shadow-lift); border-color: var(--tone); t
 .np-load--2 { background: var(--np-c-warn); color: var(--np-c-warn-text); }
 .np-load--3, .np-load--over { background: var(--np-c-error); color: #ffffff; }
 .np-workload td:first-child, .np-workload th:first-child { min-width: 14rem; }
+
+/* ============================== the schedule of one project (np-tl), in the look of the Gantt ============================== */
+.np-tl__scale { height: 1.9rem; border-bottom: 2px solid var(--mat-border); }
+.np-tl__month { font-weight: 800; font-size: .78rem; color: var(--mat-text); text-transform: capitalize; border-left: 1px solid var(--mat-border); padding-left: 6px; top: 0; bottom: 0; }
+.np-tl__rows { gap: 0; }
+.np-tl__row { min-height: 2.9rem; border-bottom: 1px solid var(--mat-border); }
+.np-tl__row:hover { background: color-mix(in srgb, var(--mat-accent) 4%, var(--mat-surface)); }
+.np-tl__label { font-weight: 700; }
+.np-tl__track { height: 1.9rem; background: transparent; }
+.np-tl__bar { top: 50%; bottom: auto; height: 1.5rem; transform: translateY(-50%); border-radius: 9px; background: var(--np-c-info); }
+.np-tl__bar--plain { background: var(--np-c-plain); }
+.np-tl__bar--ok { background: var(--np-c-ok); }
+.np-tl__bar--error { background: var(--np-c-error); }
+.np-tl__bar--busy { background: var(--np-c-busy); }
+.np-tl__mark { top: 50%; width: 1.05rem; height: 1.05rem; transform: translateY(-50%) rotate(45deg); border-radius: 3px; background: var(--mat-accent); box-shadow: 0 0 0 2px var(--mat-surface); }
+.np-tl__mark--ok { background: var(--np-c-ok); }
+.np-tl__mark--error { background: var(--np-c-error); }
+.np-tl__mark--info { background: var(--np-c-info); }
+.np-tl__today { z-index: 2; }
+.np-tl__dates { font-weight: 600; }
+/* a chip inside a heading must not take over its tight letters */
+.np-chip { letter-spacing: 0; word-spacing: normal; }
